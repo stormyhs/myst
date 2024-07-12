@@ -1,4 +1,6 @@
 use std::fs;
+use std::env;
+use std::io::Write;
 
 #[derive(Debug)]
 enum Token {
@@ -12,7 +14,7 @@ enum Token {
 enum Expr {
     Number(i16),
     BinOp(char, Box<Expr>, Box<Expr>),
-    UnaryOp(char, Box<Expr>)
+    // UnaryOp(char, Box<Expr>)
 }
 
 #[derive(Debug)]
@@ -167,8 +169,7 @@ fn evaluate(expr: Vec<Expr>) -> i16 {
                     '/' => result = left / right,
                     _ => {}
                 }
-            },
-            _ => {}
+            }
         }
     }
 
@@ -176,16 +177,65 @@ fn evaluate(expr: Vec<Expr>) -> i16 {
 }
 
 fn main() {
-    let source = fs::read_to_string("/home/stormy/code/myst/myst/calc.my")
-        .expect("Unable to read source file");
+    let mut args: Vec<String> = env::args().collect();
+    args.remove(0);
 
-    let tokens = tokenize(source);
+    let mut repl_mode = false;
+    let mut source = String::new();
 
-    let parsed = parse(tokens);
+    for arg in &args {
+        match arg.as_str() {
+            "--repl" => {
+                repl_mode = true;
+            },
 
-    println!("{:?}", parsed);
+            _ => {
+                if source == "" {
+                    source = arg.to_string();
+                }
+            }
+        }
+    }
 
-    let result = evaluate(parsed);
+    if repl_mode {
+        loop {
+            print!("> ");
+            _ = std::io::stdout().flush();
 
-    println!("{}", result);
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+
+            if input.trim() == "exit" {
+                break;
+            }
+
+            let tokens = tokenize(input);
+
+            let parsed = parse(tokens);
+
+            let result = evaluate(parsed);
+
+            println!("# {}", result);
+        }
+    }
+    else {
+        if source == "" {
+            println!("No source file path provided. Did you mean to use --repl?");
+            return;
+        }
+
+        let source = fs::read_to_string(source)
+            .expect("Unable to read source file");
+
+        let tokens = tokenize(source);
+
+        let parsed = parse(tokens);
+
+        println!("{:?}", parsed);
+
+        let result = evaluate(parsed);
+
+        println!("{}", result);
+    }
+
 }
