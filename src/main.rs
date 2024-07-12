@@ -1,15 +1,9 @@
-
 use std::fs;
-
-// enum Operator {
-//     Add, Subtract
-// }
-
 
 #[derive(Debug)]
 enum Token {
     Number(i16),
-    Operator(char),
+    Operator(Operator),
 
     EOF
 }
@@ -21,6 +15,12 @@ enum Expr {
     UnaryOp(char, Box<Expr>)
 }
 
+#[derive(Debug)]
+enum Operator {
+    Add,
+    Subtract
+}
+
 fn tokenize(source: String) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
 
@@ -29,10 +29,22 @@ fn tokenize(source: String) -> Vec<Token> {
     for line in lines {
         for c in line.chars() {
             match c {
-                '0'..='9' => tokens.push(Token::Number(
-                    c.to_digit(10).unwrap() as i16
-                )),
-                '+' | '-' => tokens.push(Token::Operator(c)),
+                '0'..='9' => {
+                    if tokens.len() == 0 {
+                        tokens.push(Token::Number(c.to_digit(10).unwrap() as i16));
+                        continue;
+                    }
+                    match tokens[tokens.len() - 1] {
+                        Token::Number(n) => {
+                            let new_number = n * 10 + c.to_digit(10).unwrap() as i16;
+                            tokens.pop();
+                            tokens.push(Token::Number(new_number));
+                        },
+                        _ => tokens.push(Token::Number(c.to_digit(10).unwrap() as i16))
+                    }
+                },
+                '+' => tokens.push(Token::Operator(Operator::Add)),
+                '-' => tokens.push(Token::Operator(Operator::Subtract)),
                 _ => {}
             }
         }
@@ -50,18 +62,18 @@ fn parse(tokens: Vec<Token>) -> Vec<Expr> {
     let mut result: Vec<Expr> = Vec::new();
     
     while i < tokens.len() {
-        match tokens[i] {
+        match &tokens[i] {
             Token::Number(n) => {
-                result.push(Expr::Number(n));
+                result.push(Expr::Number(*n));
             },
             Token::Operator(op) => {
                 match op {
-                    '+' | '-' => {
+                    Operator::Add => {
                         if tokens.len() < i + 1 {
                             panic!("Expected number after operator");
                         }
 
-                        let left = result.pop().unwrap();
+                        let left = result.pop().expect("Expected number before operator");
                         let right = match tokens[i + 1] {
                             Token::Number(n) => Expr::Number(n),
                             _ => panic!("Expected number after operator")
@@ -70,9 +82,24 @@ fn parse(tokens: Vec<Token>) -> Vec<Expr> {
                         // Skip the next token, which is the right operand
                         i += 1;
 
-                        result.push(Expr::BinOp(op, Box::new(left), Box::new(right)));
+                        result.push(Expr::BinOp('+', Box::new(left), Box::new(right)));
                     },
-                    _ => {}
+                    Operator::Subtract => {
+                        if tokens.len() < i + 1 {
+                            panic!("Expected number after operator");
+                        }
+
+                        let left = result.pop().expect("Expected number before operator");
+                        let right = match tokens[i + 1] {
+                            Token::Number(n) => Expr::Number(n),
+                            _ => panic!("Expected number after operator")
+                        };
+
+                        // Skip the next token, which is the right operand
+                        i += 1;
+
+                        result.push(Expr::BinOp('-', Box::new(left), Box::new(right)));
+                    },
                 }
             }
 
