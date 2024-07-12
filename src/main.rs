@@ -18,7 +18,9 @@ enum Expr {
 #[derive(Debug)]
 enum Operator {
     Add,
-    Subtract
+    Subtract,
+    Multiply,
+    Divide
 }
 
 fn tokenize(source: String) -> Vec<Token> {
@@ -45,6 +47,8 @@ fn tokenize(source: String) -> Vec<Token> {
                 },
                 '+' => tokens.push(Token::Operator(Operator::Add)),
                 '-' => tokens.push(Token::Operator(Operator::Subtract)),
+                '*' => tokens.push(Token::Operator(Operator::Multiply)),
+                '/' => tokens.push(Token::Operator(Operator::Divide)),
                 _ => {}
             }
         }
@@ -100,6 +104,38 @@ fn parse(tokens: Vec<Token>) -> Vec<Expr> {
 
                         result.push(Expr::BinOp('-', Box::new(left), Box::new(right)));
                     },
+                    Operator::Multiply => {
+                        if tokens.len() < i + 1 {
+                            panic!("Expected number after operator");
+                        }
+
+                        let left = result.pop().expect("Expected number before operator");
+                        let right = match tokens[i + 1] {
+                            Token::Number(n) => Expr::Number(n),
+                            _ => panic!("Expected number after operator")
+                        };
+
+                        // Skip the next token, which is the right operand
+                        i += 1;
+
+                        result.push(Expr::BinOp('*', Box::new(left), Box::new(right)));
+                    }
+                    Operator::Divide => {
+                        if tokens.len() < i + 1 {
+                            panic!("Expected number after operator");
+                        }
+
+                        let left = result.pop().expect("Expected number before operator");
+                        let right = match tokens[i + 1] {
+                            Token::Number(n) => Expr::Number(n),
+                            _ => panic!("Expected number after operator")
+                        };
+
+                        // Skip the next token, which is the right operand
+                        i += 1;
+
+                        result.push(Expr::BinOp('/', Box::new(left), Box::new(right)));
+                    }
                 }
             }
 
@@ -127,6 +163,8 @@ fn evaluate(expr: Vec<Expr>) -> i16 {
                 match op {
                     '+' => result = left + right,
                     '-' => result = left - right,
+                    '*' => result = left * right,
+                    '/' => result = left / right,
                     _ => {}
                 }
             },
