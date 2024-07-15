@@ -1,6 +1,7 @@
 use std::fs;
 use std::env;
 use std::io::Write;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 enum Token {
@@ -22,7 +23,9 @@ enum Operator {
     Add,
     Subtract,
     Multiply,
-    Divide
+    Divide,
+
+    Assign
 }
 
 fn tokenize(source: String) -> Vec<Token> {
@@ -51,6 +54,7 @@ fn tokenize(source: String) -> Vec<Token> {
                 '-' => tokens.push(Token::Operator(Operator::Subtract)),
                 '*' => tokens.push(Token::Operator(Operator::Multiply)),
                 '/' => tokens.push(Token::Operator(Operator::Divide)),
+                '=' => tokens.push(Token::Operator(Operator::Assign)),
                 _ => {}
             }
         }
@@ -137,6 +141,22 @@ fn parse(tokens: Vec<Token>) -> Vec<Expr> {
                         i += 1;
 
                         result.push(Expr::BinOp('/', Box::new(left), Box::new(right)));
+                    },
+                    Operator::Assign => {
+                        if tokens.len() < i + 1 {
+                            panic!("Expected number after assignment operator");
+                        }
+
+                        let left = result.pop().expect("Expected variable before assignment operator");
+                        let right = match tokens[i + 1] {
+                            Token::Number(n) => Expr::Number(n),
+                            _ => panic!("Expected number after assignment operator")
+                        };
+
+                        // Skip the next token, which is the right operand
+                        i += 1;
+
+                        result.push(Expr::BinOp('=', Box::new(left), Box::new(right)));
                     }
                 }
             }
@@ -167,6 +187,9 @@ fn evaluate(expr: Vec<Expr>) -> i16 {
                     '-' => result = left - right,
                     '*' => result = left * right,
                     '/' => result = left / right,
+                    '=' => {
+                        todo!("Assignment not implemented.");
+                    }
                     _ => {}
                 }
             }
@@ -196,6 +219,8 @@ fn main() {
             }
         }
     }
+
+    let mut state: HashMap<String, i16> = HashMap::new();
 
     if repl_mode {
         loop {
