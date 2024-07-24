@@ -22,7 +22,7 @@ fn main() {
             "--repl" => {
                 repl_mode = true;
             },
-            "--debug" => {
+            "--debug" | "-d" => {
                 debug_mode = true;
             },
 

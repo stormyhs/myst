@@ -22,7 +22,6 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                     match last {
                         Token::Number(n) => {
                             let new_number = n * 10 + c.to_digit(10).unwrap() as i16;
-                            tokens.pop();
                             tokens.push(Token::Number(new_number));
                         },
                         Token::Identifier(name) => {
