@@ -7,8 +7,9 @@ use std::collections::HashMap;
 enum Token {
     Number(i16),
     Operator(Operator),
-
-    EOF
+    Identifier(String),
+    Variable(String, i16),
+    Assign
 }
 
 #[derive(Debug)]
@@ -24,8 +25,6 @@ enum Operator {
     Subtract,
     Multiply,
     Divide,
-
-    Assign
 }
 
 fn tokenize(source: String) -> Vec<Token> {
@@ -35,32 +34,70 @@ fn tokenize(source: String) -> Vec<Token> {
     
     for line in lines {
         for c in line.chars() {
+            println!("char: {}", c);
+            println!("tokens: {:?}", tokens);
             match c {
                 '0'..='9' => {
                     if tokens.len() == 0 {
                         tokens.push(Token::Number(c.to_digit(10).unwrap() as i16));
                         continue;
                     }
-                    match tokens[tokens.len() - 1] {
+
+                    let last = tokens.pop().unwrap();
+                    match last {
                         Token::Number(n) => {
                             let new_number = n * 10 + c.to_digit(10).unwrap() as i16;
                             tokens.pop();
                             tokens.push(Token::Number(new_number));
                         },
-                        _ => tokens.push(Token::Number(c.to_digit(10).unwrap() as i16))
+                        Token::Identifier(name) => {
+                            tokens.pop();
+                            tokens.push(Token::Variable(name, c.to_digit(10).unwrap() as i16));
+                        },
+                        Token::Assign => {
+                            let identifier = match tokens.pop().unwrap() {
+                                Token::Identifier(name) => name,
+                                _ => panic!("Expected identifier after assign")
+                            };
+
+                            tokens.push(Token::Variable(identifier, c.to_digit(10).unwrap() as i16));
+                        },
+                        _ => {
+                            tokens.push(last);
+                            tokens.push(Token::Number(c.to_digit(10).unwrap() as i16))
+                        }
                     }
                 },
                 '+' => tokens.push(Token::Operator(Operator::Add)),
                 '-' => tokens.push(Token::Operator(Operator::Subtract)),
                 '*' => tokens.push(Token::Operator(Operator::Multiply)),
                 '/' => tokens.push(Token::Operator(Operator::Divide)),
-                '=' => tokens.push(Token::Operator(Operator::Assign)),
-                _ => {}
+                '=' => tokens.push(Token::Assign),
+                ' ' => (),
+                _ => {
+                    if tokens.len() == 0 {
+                        tokens.push(Token::Identifier(c.to_string()));
+                        continue;
+                    }
+
+                    let last = tokens.pop().unwrap();
+                    match last {
+                        Token::Identifier(name) => {
+                            if c.is_alphabetic() {
+                                tokens.push(Token::Identifier(name + &c.to_string()));
+                            } else {
+                                panic!("Identifier must be alphanumeric");
+                            }
+                        },
+                        Token::Assign => {
+                            tokens.push(Token::Variable(c.to_string(), 0));
+                        }
+                        _ => panic!("Unexpected token while building identifier: {:?}", last)
+                    }
+                }
             }
         }
     }
-
-    tokens.push(Token::EOF);
 
     return tokens;
 }
@@ -142,26 +179,20 @@ fn parse(tokens: Vec<Token>) -> Vec<Expr> {
 
                         result.push(Expr::BinOp('/', Box::new(left), Box::new(right)));
                     },
-                    Operator::Assign => {
-                        if tokens.len() < i + 1 {
-                            panic!("Expected number after assignment operator");
-                        }
-
-                        let left = result.pop().expect("Expected variable before assignment operator");
-                        let right = match tokens[i + 1] {
-                            Token::Number(n) => Expr::Number(n),
-                            _ => panic!("Expected number after assignment operator")
-                        };
-
-                        // Skip the next token, which is the right operand
-                        i += 1;
-
-                        result.push(Expr::BinOp('=', Box::new(left), Box::new(right)));
-                    }
                 }
+            },
+
+            Token::Variable(name, value) => {
+                println!("Variable: {} = {}", name, value);
+            },
+
+            Token::Assign => {
+                println!("Skipping assign token");
             }
 
-            _ => {}
+            _ => {
+                println!("Unknown token: {:?}", tokens[i]);
+            }
         }
 
         i += 1;
@@ -170,8 +201,9 @@ fn parse(tokens: Vec<Token>) -> Vec<Expr> {
     return result;
 }
 
-fn evaluate(expr: Vec<Expr>) -> i16 {
+fn evaluate(expr: Vec<Expr>, state: &HashMap<String, i16>) -> i16 {
     let mut result = 0;
+    let mut state = state.clone();
 
     for e in expr {
         match e {
@@ -179,8 +211,10 @@ fn evaluate(expr: Vec<Expr>) -> i16 {
                 result = n;
             },
             Expr::BinOp(op, left, right) => {
-                let left = evaluate(vec![*left]);
-                let right = evaluate(vec![*right]);
+                let left = evaluate(vec![*left], &state);
+                let right = evaluate(vec![*right], &state);
+
+                println!("{} {} {}", left, op, right);
 
                 match op {
                     '+' => result = left + right,
@@ -188,7 +222,7 @@ fn evaluate(expr: Vec<Expr>) -> i16 {
                     '*' => result = left * right,
                     '/' => result = left / right,
                     '=' => {
-                        todo!("Assignment not implemented.");
+                        state.insert("x".to_string(), right);
                     }
                     _ => {}
                 }
@@ -220,7 +254,7 @@ fn main() {
         }
     }
 
-    let mut state: HashMap<String, i16> = HashMap::new();
+    let state: HashMap<String, i16> = HashMap::new();
 
     if repl_mode {
         loop {
@@ -238,7 +272,7 @@ fn main() {
 
             let parsed = parse(tokens);
 
-            let result = evaluate(parsed);
+            let result = evaluate(parsed, &state);
 
             println!("# {}", result);
         }
@@ -253,12 +287,12 @@ fn main() {
             .expect("Unable to read source file");
 
         let tokens = tokenize(source);
+        println!("Tokens: {:?}", tokens);
 
         let parsed = parse(tokens);
+        println!("AST: {:?}", parsed);
 
-        println!("{:?}", parsed);
-
-        let result = evaluate(parsed);
+        let result = evaluate(parsed, &state);
 
         println!("{}", result);
     }
