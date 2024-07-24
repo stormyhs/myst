@@ -1,3 +1,8 @@
+Myst is a programming language that will attempt to be simple to read and understand, reliable, and fun!
+
+
+## Preliminary Language Specification
+
 ### Variables
 ```ts
 let age: i32 = 69;
@@ -7,7 +12,18 @@ const name: String = "Andrew";
 
 ### Loops
 ```ts
+while(true) {
+    print("Should semicolons be mandatory?");
+}
 
+for(let i = 0; i <= 100; i += 1) {
+    print("For loops are useful");
+}
+
+let array = ["a", "b", "c"];
+for(let item of array) {
+    print(item); // `item` will be each element of `array`.
+}
 ```
 
 ### Functions
