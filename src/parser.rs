@@ -1,5 +1,7 @@
 use crate::tokens::{Token, Operator, Expr};
 
+/*this is the parser*/
+
 pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
     // [Number(1), Operator('+'), Number(4), Operator('-'), Number(3)]
     

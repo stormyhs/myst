@@ -1,5 +1,7 @@
 use crate::tokens::{Token, Operator};
 
+/*this is the tokenizer*/
+
 pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
 
