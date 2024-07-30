@@ -1,4 +1,4 @@
-use crate::tokens::{Token, Operator};
+use crate::tokens::{Token, Operator, Value};
 
 pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
@@ -10,8 +10,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
 
         for c in line.chars() {
             if debug_mode {
-                // println!("char: {}", c);
-                // println!("tokens: {:?}", tokens);
+                println!("tokens: {:?}", tokens);
             }
 
             match c {
@@ -29,11 +28,16 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                         },
                         Token::Identifier(name) => {
                             tokens.pop();
-                            tokens.push(Token::Variable(name, c.to_digit(10).unwrap() as i16));
+                            tokens.push(Token::Variable(name, Value::Number(c.to_digit(10).unwrap() as i16)));
                         },
                         Token::Variable(name, value) => {
                             // Rebuid the variable with `value` + `c` (append, not add)
-                            tokens.push(Token::Variable(name, value * 10 + c.to_digit(10).unwrap() as i16));
+                            let new_value = match value {
+                                Value::Number(n) => Value::Number(n * 10 + c.to_digit(10).unwrap() as i16),
+                                _ => panic!("Expected number")
+                            };
+
+                            tokens.push(Token::Variable(name, new_value));
                         },
                         Token::Assign => {
                             let identifier = match tokens.pop().unwrap() {
@@ -41,7 +45,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                                 _ => panic!("Expected identifier after assign")
                             };
 
-                            tokens.push(Token::Variable(identifier, c.to_digit(10).unwrap() as i16));
+                            tokens.push(Token::Variable(identifier, Value::Number(c.to_digit(10).unwrap() as i16)));
                         },
                         _ => {
                             tokens.push(last);
@@ -89,6 +93,36 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 '"' => {
                     if in_string {
                         in_string = false;
+
+                        if tokens.len() == 0 {
+                            tokens.push(Token::String(c.to_string()));
+                            continue;
+                        }
+
+                        let string = tokens.pop().unwrap();
+                        let last = tokens.pop().unwrap();
+                        match last {
+                            Token::Assign => {
+                                let identifier = match tokens.pop().unwrap() {
+                                    Token::Identifier(name) => name,
+                                    Token::Semicolon => {
+                                        panic!("semicolon...")
+                                    },
+                                    _ => {
+                                        panic!("Expected identifier after assign")
+                                    }
+                                };
+
+                                tokens.push(Token::Variable(identifier, Value::String(match string {
+                                    Token::String(s) => s,
+                                    _ => panic!("Expected string")
+                                })));
+                            },
+                            _ => {
+                                tokens.push(last);
+                            }
+                        }
+
                     } else {
                         in_string = true;
                     }
@@ -143,7 +177,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                             }
                         },
                         Token::Assign => {
-                            tokens.push(Token::Variable(c.to_string(), 0));
+                            tokens.push(Token::Variable(c.to_string(), Value::Number(0)));
                         }
                         Token::Semicolon => {
                             tokens.push(Token::Identifier(c.to_string()));
@@ -152,7 +186,6 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                             tokens.push(last);
                             tokens.push(Token::Identifier(c.to_string()));
                         }
-                        //_ => panic!("Unexpected token while building identifier: {:?} - char: {}", last, c)
                     }
                 }
             }

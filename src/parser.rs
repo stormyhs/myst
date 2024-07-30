@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use crate::tokens::{Token, Operator, Expr};
+use crate::tokens::{Token, Operator, Expr, Value};
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
     // [Number(1), Operator('+'), Number(4), Operator('-'), Number(3), Semicolon]
     
     let mut i = 0;
-    let mut state: HashMap<String, i16> = HashMap::new();
+    let mut state: HashMap<String, Value> = HashMap::new();
     let mut result: Vec<Expr> = Vec::new();
     
     while i < tokens.len() {
@@ -26,11 +26,20 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
                         let right = match &tokens[i + 1] {
                             Token::Number(n) => Expr::Number(*n),
                             Token::Variable(_, value) => {
+                                let value = match value {
+                                    Value::Number(n) => n,
+                                    _ => panic!("Expected number after variable")
+                                };
                                 Expr::Number(value.clone())
                             }
                             Token::Identifier(name) => {
                                 if state.contains_key(&name.to_string()) {
-                                    Expr::Number(state[&name.to_string()])
+                                    let value = &state[&name.to_string()];
+                                    let value = match value {
+                                        Value::Number(value) => value,
+                                        _ => panic!("Expected number after variable")
+                                    };
+                                    Expr::Number(*value)
                                 } else {
                                     panic!("Identifier '{}' does not coorelate to a value", name);
                                 }
@@ -95,20 +104,25 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
             },
 
             Token::Variable(name, value) => {
-                state.insert(name.to_string(), value.clone());
+                let owned_value: Value = match value {
+                    Value::Number(n) => Value::Number(*n),
+                    Value::String(s) => Value::String(s.to_string())
+                };
+                state.insert(name.to_string(), owned_value);
             },
 
             Token::Identifier(name) => {
                 if state.contains_key(name) {
-                    result.push(Expr::Number(state[name]));
+                    let value = &state[name];
+
+                    match value {
+                        Value::Number(n) => result.push(Expr::Number(*n)),
+                        Value::String(s) => result.push(Expr::String(s.to_string()))
+                    }
                 } else {
                     panic!("Identifier '{}' does not coorelate to a value", name);
                 }
             },
-
-            Token::Assign => {
-                println!("Skipping assign token");
-            }
 
             Token::Semicolon => {
                 // Do nothing :)
@@ -119,10 +133,20 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
                     for arg in args {
                         let value = match arg {
                             Token::Number(n) => n.to_string(),
-                            Token::Variable(_, value) => value.to_string(),
+                            Token::Variable(_, value) => {
+                                let value = match value {
+                                    Value::Number(n) => n,
+                                    _ => panic!("Expected number after variable")
+                                };
+                                value.to_string()
+                            },
                             Token::Identifier(name) => {
                                 if state.contains_key(&name.to_string()) {
-                                    state[&name.to_string()].to_string()
+                                    let value = &state[&name.to_string()];
+                                    match value {
+                                        Value::Number(n) => n.to_string(),
+                                        Value::String(s) => s.to_string()
+                                    }
                                 } else {
                                     panic!("Identifier '{}' does not coorelate to a value", name);
                                 }

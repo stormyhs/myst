@@ -15,7 +15,7 @@ pub enum Token {
     Number(i16),
     Operator(Operator),
     Identifier(String),
-    Variable(String, i16),
+    Variable(String, Value),
     String(String),
     Call(String, Vec<Token>),
     Assign,
@@ -23,7 +23,14 @@ pub enum Token {
 }
 
 #[derive(Debug)]
+pub enum Value {
+    Number(i16),
+    String(String),
+}
+
+#[derive(Debug)]
 pub enum Expr {
     Number(i16),
+    String(String),
     BinOp(char, Box<Expr>, Box<Expr>),
 }

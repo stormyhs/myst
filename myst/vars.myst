@@ -1,5 +1,5 @@
-alpha = 2;
-bravo = 3;
-charlie = 6969;
+mynum = 42
+print(mynum)
 
-alpha + bravo + charlie;
+mystr = "Hello, World!"
+print(mystr)

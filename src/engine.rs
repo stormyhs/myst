@@ -11,6 +11,9 @@ pub fn evaluate(expr: Vec<Expr>, state: &HashMap<String, i16>) -> i16 {
             Expr::Number(n) => {
                 result = n;
             },
+            Expr::String(_s) => {
+                panic!("#! Unable to evaluate string");
+            },
             Expr::BinOp(op, left, right) => {
                 let left = evaluate(vec![*left], &state);
                 let right = evaluate(vec![*right], &state);
