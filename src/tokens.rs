@@ -16,6 +16,8 @@ pub enum Token {
     Operator(Operator),
     Identifier(String),
     Variable(String, i16),
+    String(String),
+    Call(String, Vec<Token>),
     Assign,
     Semicolon
 }

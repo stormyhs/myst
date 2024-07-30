@@ -114,6 +114,28 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
                 // Do nothing :)
             }
 
+            Token::Call(name, args) => {
+                if name == "print" {
+                    for arg in args {
+                        let value = match arg {
+                            Token::Number(n) => n.to_string(),
+                            Token::Variable(_, value) => value.to_string(),
+                            Token::Identifier(name) => {
+                                if state.contains_key(&name.to_string()) {
+                                    state[&name.to_string()].to_string()
+                                } else {
+                                    panic!("Identifier '{}' does not coorelate to a value", name);
+                                }
+                            },
+                            Token::String(s) => s.to_string(),
+                            _ => panic!("Expected number after operator")
+                        };
+
+                        println!("# {}", value);
+                    }
+                }
+            }
+
             _ => {
                 println!("Unknown token: {:?}", tokens[i]);
             }

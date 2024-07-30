@@ -6,11 +6,14 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
     let lines: Vec<&str> = source.lines().collect();
     
     for line in lines {
+        let mut in_string = false;
+
         for c in line.chars() {
             if debug_mode {
-                println!("char: {}", c);
-                println!("tokens: {:?}", tokens);
+                // println!("char: {}", c);
+                // println!("tokens: {:?}", tokens);
             }
+
             match c {
                 '0'..='9' => {
                     if tokens.len() == 0 {
@@ -52,8 +55,79 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 '/' => tokens.push(Token::Operator(Operator::Divide)),
                 '=' => tokens.push(Token::Assign),
                 ';' => tokens.push(Token::Semicolon),
-                ' ' => (),
+                '(' => {
+                    let last = tokens.pop().unwrap();
+                    match last {
+                        Token::Identifier(name) => {
+                            tokens.push(Token::Call(name, Vec::new()));
+                        },
+                        _ => panic!("Expected identifier before argument list")
+                    }
+                },
+                ')' => {
+                    // Pop everything up to `Call`, and add it into the `Call` arguments list
+                    let mut args: Vec<Token> = Vec::new();
+                    loop {
+                        let last = tokens.pop().unwrap();
+                        if debug_mode {
+                            println!("popped arg: {:?}", last);
+                        }
+                        match last {
+                            Token::Call(_, _) => {
+                                tokens.push(last);
+                                break;
+                            },
+                            _ => args.push(last)
+                        }
+                    }
+
+                    match tokens.pop().unwrap() {
+                        Token::Call(name, _) => tokens.push(Token::Call(name, args)),
+                        _ => panic!("Expected call token")
+                    };
+                },
+                '"' => {
+                    if in_string {
+                        in_string = false;
+                    } else {
+                        in_string = true;
+                    }
+                },
+                ' ' => {
+                    if in_string {
+                        let last = tokens.pop().unwrap();
+                        match last {
+                            Token::String(s) => {
+                                tokens.push(Token::String(s + &c.to_string()));
+                            },
+                            _ => {
+                                tokens.push(last);
+                                tokens.push(Token::String(c.to_string()));
+                            }
+                        }
+                    }
+                }
                 _ => {
+                    if in_string {
+                        if tokens.len() == 0 {
+                            tokens.push(Token::String(c.to_string()));
+                            continue;
+                        }
+
+                        let last = tokens.pop().unwrap();
+                        match last {
+                            Token::String(s) => {
+                                tokens.push(Token::String(s + &c.to_string()));
+                            },
+                            _ => {
+                                tokens.push(last);
+                                tokens.push(Token::String(c.to_string()));
+                            }
+                        }
+
+                        continue;
+                    }
+
                     if tokens.len() == 0 {
                         tokens.push(Token::Identifier(c.to_string()));
                         continue;
