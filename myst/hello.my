@@ -1,5 +1,0 @@
-print("Hello, world! This is an inbuilt function of the Myst interpreter. We can't have certain symbols in strings yet, but the day will come!");
-
-myVar = 69;
-
-print(myVar);

@@ -1,0 +1,5 @@
+myStr = "Hello! I am an example Myst source file."
+print(myStr)
+
+a = 10
+print(a)

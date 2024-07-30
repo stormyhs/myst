@@ -1,5 +1,0 @@
-mynum = 42
-print(mynum)
-
-mystr = "Hello, World!"
-print(mystr)

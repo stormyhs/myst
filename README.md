@@ -1,57 +1,29 @@
+# The Myst Programming Language
+
 Myst is a programming language that will attempt to be simple to read and understand, reliable, and fun!
 
+Its syntax will be similar to TypeScript, but its behavior will seek to avoid the *quirks* of JavaScript.
 
-## Preliminary Language Specification
+Currently, Myst is tokenized, parsed, and interpreted using Rust. In the future Myst will be compiled (or JITed) using a custom bytecode runtime.
 
-### Variables
-```ts
-let age: i32 = 69;
-let inferredAge = 420;
-const name: String = "Andrew";
+
+### How to run
+In this stage of development, it is suggested you use Rust's `cargo` to run Myst.
+
+An example of running `myst/example.myst`:
+```bash
+cargo r myst/example.myst
 ```
 
-### Loops
-```ts
-while(true) {
-    print("Should semicolons be mandatory?");
-}
+### Notes
+Myst also takes some CLI arguments. You can use `--debug` for debugging information as the program runs, or `--repl` to evaluate code live, as the user feeds input source code.
 
-for(let i = 0; i <= 100; i += 1) {
-    print("For loops are useful");
-}
-
-let array = ["a", "b", "c"];
-for(let item of array) {
-    print(item); // `item` will be each element of `array`.
-}
+To do this through `cargo`, you would use this command:
+```bash
+cargo r myst/example.myst -- --debug
 ```
 
-### Functions
-```ts
-fn giveMeAString() {
-    return "I am a string!";
-}
-
-fn addTwoNumbers(a: i32, b: i32) -> i32 {
-    const result = a + b;
-    return result;
-
-    // OR
-
-    return a + b;
-}
+Or, if you are running a complied executable directly:
+```bash
+./myst myst/example.myst --debug
 ```
-
-### Type Definitions
-```ts
-type Unit { "Metric" | "Imperial" } // Variables of this type must be a string of "Metric" or "Imperial"
-```
-
-```ts
-type Person {
-    name: String;
-    age: i32;
-    getLocation: fn(unitType: Unit) -> String; // `getLocation` is a function that takes in `unitType` as an argument of type `Unit` and returns a `String`
-}
-```
-
