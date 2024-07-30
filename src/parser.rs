@@ -1,9 +1,12 @@
+use std::collections::HashMap;
+
 use crate::tokens::{Token, Operator, Expr};
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
-    // [Number(1), Operator('+'), Number(4), Operator('-'), Number(3)]
+    // [Number(1), Operator('+'), Number(4), Operator('-'), Number(3), Semicolon]
     
     let mut i = 0;
+    let mut state: HashMap<String, i16> = HashMap::new();
     let mut result: Vec<Expr> = Vec::new();
     
     while i < tokens.len() {
@@ -19,8 +22,19 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
                         }
 
                         let left = result.pop().expect("Expected number before operator");
-                        let right = match tokens[i + 1] {
-                            Token::Number(n) => Expr::Number(n),
+
+                        let right = match &tokens[i + 1] {
+                            Token::Number(n) => Expr::Number(*n),
+                            Token::Variable(_, value) => {
+                                Expr::Number(value.clone())
+                            }
+                            Token::Identifier(name) => {
+                                if state.contains_key(&name.to_string()) {
+                                    Expr::Number(state[&name.to_string()])
+                                } else {
+                                    panic!("Identifier '{}' does not coorelate to a value", name);
+                                }
+                            },
                             _ => panic!("Expected number after operator")
                         };
 
@@ -81,11 +95,23 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
             },
 
             Token::Variable(name, value) => {
-                println!("Variable: {} = {}", name, value);
+                state.insert(name.to_string(), value.clone());
+            },
+
+            Token::Identifier(name) => {
+                if state.contains_key(name) {
+                    result.push(Expr::Number(state[name]));
+                } else {
+                    panic!("Identifier '{}' does not coorelate to a value", name);
+                }
             },
 
             Token::Assign => {
                 println!("Skipping assign token");
+            }
+
+            Token::Semicolon => {
+                // Do nothing :)
             }
 
             _ => {

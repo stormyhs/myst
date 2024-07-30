@@ -1,2 +1,5 @@
-a = 2
-b = 3
+alpha = 2;
+bravo = 3;
+charlie = 6969;
+
+alpha + bravo + charlie;

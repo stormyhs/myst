@@ -1,3 +1,6 @@
+// TODO: This file is named `tokens`. But it contains more than just tokens.
+// This entire structure needs to be redone. Notably, `Variable` probably shouldn't even exist.
+// Or something. I don't know. I'm tired. I'll come back to this later.
 
 #[derive(Debug)]
 pub enum Operator {
@@ -13,7 +16,8 @@ pub enum Token {
     Operator(Operator),
     Identifier(String),
     Variable(String, i16),
-    Assign
+    Assign,
+    Semicolon
 }
 
 #[derive(Debug)]

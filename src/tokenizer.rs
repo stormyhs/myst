@@ -28,6 +28,10 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                             tokens.pop();
                             tokens.push(Token::Variable(name, c.to_digit(10).unwrap() as i16));
                         },
+                        Token::Variable(name, value) => {
+                            // Rebuid the variable with `value` + `c` (append, not add)
+                            tokens.push(Token::Variable(name, value * 10 + c.to_digit(10).unwrap() as i16));
+                        },
                         Token::Assign => {
                             let identifier = match tokens.pop().unwrap() {
                                 Token::Identifier(name) => name,
@@ -47,6 +51,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 '*' => tokens.push(Token::Operator(Operator::Multiply)),
                 '/' => tokens.push(Token::Operator(Operator::Divide)),
                 '=' => tokens.push(Token::Assign),
+                ';' => tokens.push(Token::Semicolon),
                 ' ' => (),
                 _ => {
                     if tokens.len() == 0 {
@@ -66,7 +71,14 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                         Token::Assign => {
                             tokens.push(Token::Variable(c.to_string(), 0));
                         }
-                        _ => panic!("Unexpected token while building identifier: {:?}", last)
+                        Token::Semicolon => {
+                            tokens.push(Token::Identifier(c.to_string()));
+                        },
+                        _ => {
+                            tokens.push(last);
+                            tokens.push(Token::Identifier(c.to_string()));
+                        }
+                        //_ => panic!("Unexpected token while building identifier: {:?} - char: {}", last, c)
                     }
                 }
             }
