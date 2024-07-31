@@ -157,7 +157,10 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
 
                         println!("# {}", value);
                     }
+                } else {
+                    panic!("Unknown function: {}", name);
                 }
+
             }
 
             _ => {
