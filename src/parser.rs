@@ -1,170 +1,143 @@
-use std::collections::HashMap;
+use crate::tokens::{Token, Expr};
 
-use crate::tokens::{Token, Operator, Expr, Value};
-
-pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
-    // [Number(1), Operator('+'), Number(4), Operator('-'), Number(3), Semicolon]
-    
+pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
     let mut i = 0;
-    let mut state: HashMap<String, Value> = HashMap::new();
     let mut result: Vec<Expr> = Vec::new();
     
     while i < tokens.len() {
+        if debug_mode {
+            println!("Parsing token: {:?}", tokens[i]);
+        }
         match &tokens[i] {
             Token::Number(n) => {
-                result.push(Expr::Number(*n));
-            },
-            Token::Operator(op) => {
-                match op {
-                    Operator::Add => {
-                        if tokens.len() < i + 1 {
-                            panic!("Expected number after operator");
+                // If the last token was a number, append this number to the last number.
+                if result.len() > 0 {
+                    let last = result.pop().unwrap();
+                    match last {
+                        Expr::Number(last_n) => {
+                            result.push(Expr::Number(last_n * 10 + n));
+                        },
+                        _ => {
+                            result.push(last);
+                            result.push(Expr::Number(*n));
                         }
-
-                        let left = result.pop().expect("Expected number before operator");
-
-                        let right = match &tokens[i + 1] {
-                            Token::Number(n) => Expr::Number(*n),
-                            Token::Variable(_, value) => {
-                                let value = match value {
-                                    Value::Number(n) => n,
-                                    _ => panic!("Expected number after variable")
-                                };
-                                Expr::Number(value.clone())
-                            }
-                            Token::Identifier(name) => {
-                                if state.contains_key(&name.to_string()) {
-                                    let value = &state[&name.to_string()];
-                                    let value = match value {
-                                        Value::Number(value) => value,
-                                        _ => panic!("Expected number after variable")
-                                    };
-                                    Expr::Number(*value)
-                                } else {
-                                    panic!("Identifier '{}' does not coorelate to a value", name);
-                                }
-                            },
-                            _ => panic!("Expected number after operator")
-                        };
-
-                        // Skip the next token, which is the right operand
-                        i += 1;
-
-                        result.push(Expr::BinOp('+', Box::new(left), Box::new(right)));
-                    },
-                    Operator::Subtract => {
-                        if tokens.len() < i + 1 {
-                            panic!("Expected number after operator");
-                        }
-
-                        let left = result.pop().expect("Expected number before operator");
-                        let right = match tokens[i + 1] {
-                            Token::Number(n) => Expr::Number(n),
-                            _ => panic!("Expected number after operator")
-                        };
-
-                        // Skip the next token, which is the right operand
-                        i += 1;
-
-                        result.push(Expr::BinOp('-', Box::new(left), Box::new(right)));
-                    },
-                    Operator::Multiply => {
-                        if tokens.len() < i + 1 {
-                            panic!("Expected number after operator");
-                        }
-
-                        let left = result.pop().expect("Expected number before operator");
-                        let right = match tokens[i + 1] {
-                            Token::Number(n) => Expr::Number(n),
-                            _ => panic!("Expected number after operator")
-                        };
-
-                        // Skip the next token, which is the right operand
-                        i += 1;
-
-                        result.push(Expr::BinOp('*', Box::new(left), Box::new(right)));
                     }
-                    Operator::Divide => {
-                        if tokens.len() < i + 1 {
-                            panic!("Expected number after operator");
-                        }
-
-                        let left = result.pop().expect("Expected number before operator");
-                        let right = match tokens[i + 1] {
-                            Token::Number(n) => Expr::Number(n),
-                            _ => panic!("Expected number after operator")
-                        };
-
-                        // Skip the next token, which is the right operand
-                        i += 1;
-
-                        result.push(Expr::BinOp('/', Box::new(left), Box::new(right)));
-                    },
+                } else {
+                    result.push(Expr::Number(*n));
                 }
             },
+            Token::Plus => {
+                if tokens.len() < i + 1 {
+                    panic!("Expected number after operator");
+                }
 
-            Token::Variable(name, value) => {
-                let owned_value: Value = match value {
-                    Value::Number(n) => Value::Number(*n),
-                    Value::String(s) => Value::String(s.to_string())
+                let left = result.pop().expect("Expected number before operator");
+                let right = match tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(n),
+                    _ => panic!("Expected number after operator")
                 };
-                state.insert(name.to_string(), owned_value);
+
+                i += 1;
+
+                result.push(Expr::BinOp('+', Box::new(left), Box::new(right)));
             },
-
-            Token::Identifier(name) => {
-                if state.contains_key(name) {
-                    let value = &state[name];
-
-                    match value {
-                        Value::Number(n) => result.push(Expr::Number(*n)),
-                        Value::String(s) => result.push(Expr::String(s.to_string()))
-                    }
-                } else {
-                    panic!("Identifier '{}' does not coorelate to a value", name);
-                }
-            },
-
-            Token::Semicolon => {
-                // Do nothing :)
-            }
-
-            Token::Call(name, args) => {
-                if name == "print" {
-                    for arg in args {
-                        let value = match arg {
-                            Token::Number(n) => n.to_string(),
-                            Token::Variable(_, value) => {
-                                let value = match value {
-                                    Value::Number(n) => n,
-                                    _ => panic!("Expected number after variable")
-                                };
-                                value.to_string()
-                            },
-                            Token::Identifier(name) => {
-                                if state.contains_key(&name.to_string()) {
-                                    let value = &state[&name.to_string()];
-                                    match value {
-                                        Value::Number(n) => n.to_string(),
-                                        Value::String(s) => s.to_string()
-                                    }
-                                } else {
-                                    panic!("Identifier '{}' does not coorelate to a value", name);
-                                }
-                            },
-                            Token::String(s) => s.to_string(),
-                            _ => panic!("Expected number after operator")
-                        };
-
-                        println!("# {}", value);
-                    }
-                } else {
-                    panic!("Unknown function: {}", name);
+            Token::Minus => {
+                if tokens.len() < i + 1 {
+                    panic!("Expected number after operator");
                 }
 
-            }
+                let left = result.pop().expect("Expected number before operator");
+                let right = match tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(n),
+                    _ => panic!("Expected number after operator")
+                };
+
+                i += 1;
+
+                result.push(Expr::BinOp('-', Box::new(left), Box::new(right)));
+            },
+            Token::Star => {
+                if tokens.len() < i + 1 {
+                    panic!("Expected number after operator");
+                }
+
+                let left = result.pop().expect("Expected number before operator");
+                let right = match tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(n),
+                    _ => panic!("Expected number after operator")
+                };
+
+                i += 1;
+
+                result.push(Expr::BinOp('*', Box::new(left), Box::new(right)));
+            },
+            Token::Slash => {
+                if tokens.len() < i + 1 {
+                    panic!("Expected number after operator");
+                }
+
+                let left = result.pop().expect("Expected number before operator");
+                let right = match tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(n),
+                    _ => panic!("Expected number after operator")
+                };
+
+                i += 1;
+
+                result.push(Expr::BinOp('/', Box::new(left), Box::new(right)));
+            },
+            Token::Equal => {
+                if tokens.len() < i + 1 {
+                    panic!("Expected number after operator");
+                }
+
+                // Get every next token until a semicolon, parse it, then push a
+                // `Expr::BinOp('=')` with the left side being the variable and the right side being the parsed expression
+
+                let left = match result.pop().expect("Expected variable before operator") {
+                    Expr::Identifier(s) => s,
+                    _ => panic!("Expected variable before operator")
+                };
+
+                let mut right: Vec<Token> = Vec::new();
+                i += 1;
+                while i < tokens.len() {
+                    match &tokens[i] {
+                        Token::Semicolon => {
+                            break;
+                        },
+                        _ => {}
+                    }
+                    right.push(tokens[i].clone());
+                    i += 1;
+                }
+
+                let right = parse(right, debug_mode);
+
+                result.push(Expr::BinOp('=', Box::new(Expr::Identifier(left)), Box::new(right[0].clone())));
+            },
+            Token::String(c) => {
+                if result.len() > 0 {
+                    let last = result.pop().unwrap();
+                    match last {
+                        Expr::String(s) => {
+                            result.push(Expr::String(s + c));
+                        },
+                        _ => {
+                            result.push(last);
+                            result.push(Expr::String(c.to_string()));
+                        }
+                    }
+                } else {
+                    result.push(Expr::String(c.to_string()));
+                }
+            },
+            Token::Identifier(s) => {
+                result.push(Expr::Identifier(s.to_string()));
+            },
 
             _ => {
-                println!("Unknown token: {:?}", tokens[i]);
+                println!("Ignoring token: {:?}", tokens[i]);
             }
         }
 
@@ -173,4 +146,3 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Expr> {
 
     return result;
 }
-

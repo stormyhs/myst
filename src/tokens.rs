@@ -1,36 +1,26 @@
-// TODO: This file is named `tokens`. But it contains more than just tokens.
-// This entire structure needs to be redone. Notably, `Variable` probably shouldn't even exist.
-// Or something. I don't know. I'm tired. I'll come back to this later.
 
-#[derive(Debug)]
-pub enum Operator {
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-}
-
-#[derive(Debug)]
-pub enum Token {
-    Number(i16),
-    Operator(Operator),
-    Identifier(String),
-    Variable(String, Value),
-    String(String),
-    Call(String, Vec<Token>),
-    Assign,
-    Semicolon
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Number(i16),
     String(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr {
     Number(i16),
     String(String),
+    Identifier(String),
     BinOp(char, Box<Expr>, Box<Expr>),
 }
+
+#[derive(Debug, Clone)]
+pub enum Token {
+    LParen, RParen,
+    DoubleQuote,
+    Plus, Minus, Star, Slash,
+    Equal,
+    Semicolon,
+    Identifier(String),
+    String(String), Number(i16)
+}
+
