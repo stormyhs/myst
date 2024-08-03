@@ -96,6 +96,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                                 }
                             },
                             Token::Equal => {
+                                tokens.push(last);
                                 tokens.push(Token::Identifier(c.to_string()));
                             },
                             Token::Semicolon => {

@@ -8,6 +8,9 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
         if debug_mode {
             println!("Parsing token: {:?}", tokens[i]);
         }
+
+        // NOTE: The `Plus` match is the only one right now that works as intended. I will continue
+        // to work on that one specifically, then move on to the others when the logic has been figured out.
         match &tokens[i] {
             Token::Number(n) => {
                 // If the last token was a number, append this number to the last number.
@@ -31,10 +34,11 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     panic!("Expected number after operator");
                 }
 
-                let left = result.pop().expect("Expected number before operator");
-                let right = match tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(n),
-                    _ => panic!("Expected number after operator")
+                let left = result.pop().expect("Expected value or variable before operator");
+                let right = match &tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(*n),
+                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
+                    _ => panic!("Expected value or variable before operator")
                 };
 
                 i += 1;
