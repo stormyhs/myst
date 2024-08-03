@@ -6,7 +6,6 @@ Its syntax will be similar to TypeScript, but its behavior will seek to avoid th
 
 Currently, Myst is tokenized, parsed, and interpreted using Rust. In the future Myst will be compiled (or JITed) using a custom bytecode runtime.
 
-
 ### How to run
 In this stage of development, it is suggested you use Rust's `cargo` to run Myst.
 
@@ -27,3 +26,6 @@ Or, if you are running a complied executable directly:
 ```bash
 ./myst myst/example.myst --debug
 ```
+
+### Licensing
+This project is multi-licensed under both GPLv3, as well as the Non AI Usage License. Both licenses apply simultaniously.
