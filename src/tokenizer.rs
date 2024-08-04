@@ -1,4 +1,4 @@
-use crate::tokens::Token;
+use crate::tokens::{ Token, Expr };
 
 pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
@@ -59,14 +59,47 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 '-' => tokens.push(Token::Minus),
                 '*' => tokens.push(Token::Star),
                 '/' => tokens.push(Token::Slash),
-                '=' => tokens.push(Token::Equal),
+                '=' => {
+                    /*
+                    let last = tokens.pop().expect("Expected identifier before assignment");
+                    match &last {
+                        Token::Identifier(s) => {
+                            if s == "let" {
+                                tokens.push(Token::Let);
+                            }
+                        },
+                        _ => { }
+                    }
+                    tokens.push(last);
+                    tokens.push(Token::Equal)
+                    */
+                    tokens.push(Token::Equal)
+                },
                 '(' => tokens.push(Token::LParen),
                 ')' => tokens.push(Token::RParen),
                 '"' => {
                     in_string = !in_string;
                 },
                 ';' => tokens.push(Token::Semicolon),
-                ' ' => {},
+                ' ' => {
+                    if tokens.len() == 0 {
+                        continue;
+                    }
+
+                    let last = tokens.pop().unwrap();
+                    match last {
+                        Token::Identifier(s) => {
+                            if s == "let" {
+                                tokens.push(Token::Let);
+                            } else {
+                                tokens.push(Token::Identifier(s));
+                            }
+                        },
+                        _ => {
+                            tokens.push(last);
+                        }
+                    }
+                },
                 _ => {
                     if in_string {
                         let last = tokens.pop().unwrap_or(Token::String(String::new()));

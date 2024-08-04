@@ -6,7 +6,6 @@ use std::fs::File;
 use std::io::prelude::*;
 
 use std::collections::HashMap;
-use crate::tokens::Value;
 
 mod tokenizer;
 mod parser;
@@ -57,6 +56,7 @@ fn main() {
         println!("AST: {:?}", parsed);
     }
 
-    let _result = engine::evaluate(parsed);
+    let result = engine::evaluate(parsed, &mut HashMap::new(), debug_mode);
+    println!("Program evaluated to: {:?}", result);
 }
 

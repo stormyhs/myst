@@ -1,8 +1,10 @@
-use crate::tokens::{Token, Expr};
+use crate::tokens::{Token, Expr, Operator};
 
 pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
     let mut i = 0;
     let mut result: Vec<Expr> = Vec::new();
+
+    let mut declaring_variable = false;
     
     while i < tokens.len() {
         if debug_mode {
@@ -43,7 +45,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 i += 1;
 
-                result.push(Expr::BinOp('+', Box::new(left), Box::new(right)));
+                result.push(Expr::BinOp(Operator::Add, Box::new(left), Box::new(right)));
             },
             Token::Minus => {
                 if tokens.len() < i + 1 {
@@ -58,7 +60,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 i += 1;
 
-                result.push(Expr::BinOp('-', Box::new(left), Box::new(right)));
+                result.push(Expr::BinOp(Operator::Subtract, Box::new(left), Box::new(right)));
             },
             Token::Star => {
                 if tokens.len() < i + 1 {
@@ -73,7 +75,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 i += 1;
 
-                result.push(Expr::BinOp('*', Box::new(left), Box::new(right)));
+                result.push(Expr::BinOp(Operator::Multiply, Box::new(left), Box::new(right)));
             },
             Token::Slash => {
                 if tokens.len() < i + 1 {
@@ -88,7 +90,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 i += 1;
 
-                result.push(Expr::BinOp('/', Box::new(left), Box::new(right)));
+                result.push(Expr::BinOp(Operator::Divide, Box::new(left), Box::new(right)));
             },
             Token::Equal => {
                 if tokens.len() < i + 1 {
@@ -118,7 +120,13 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 let right = parse(right, debug_mode);
 
-                result.push(Expr::BinOp('=', Box::new(Expr::Identifier(left)), Box::new(right[0].clone())));
+                if declaring_variable {
+                    result.push(Expr::BinOp(Operator::Declare, Box::new(Expr::Identifier(left)), Box::new(right[0].clone())));
+                    declaring_variable = false;
+                } else {
+                    result.push(Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(left)), Box::new(right[0].clone())));
+                }
+
             },
             Token::String(c) => {
                 if result.len() > 0 {
@@ -139,9 +147,20 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
             Token::Identifier(s) => {
                 result.push(Expr::Identifier(s.to_string()));
             },
+            Token::Declaration(s, e) => {
+                result.push(Expr::BinOp(Operator::Declare, Box::new(Expr::Identifier(s.to_string())), e.clone()));
+            },
+            Token::Assignment(s, e) => {
+                result.push(Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(s.to_string())), e.clone()));
+            },
+            Token::Let => {
+                declaring_variable = true;
+            }
 
             _ => {
-                println!("Ignoring token: {:?}", tokens[i]);
+                if debug_mode {
+                    println!("Ignoring token: {:?}", tokens[i]);
+                }
             }
         }
 
