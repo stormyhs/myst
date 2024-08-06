@@ -6,9 +6,15 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
     let lines: Vec<&str> = source.lines().collect();
 
     let mut in_string = false;
+    let mut in_comment = false;
 
     for line in lines {
+        in_comment = false;
         for c in line.chars() {
+            if in_comment {
+                continue;
+            }
+
             if c != '"' && in_string {
                 let last = tokens.pop().unwrap_or(Token::String(String::new()));
                 
@@ -56,7 +62,23 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 '+' => tokens.push(Token::Plus),
                 '-' => tokens.push(Token::Minus),
                 '*' => tokens.push(Token::Star),
-                '/' => tokens.push(Token::Slash),
+                '/' => {
+                    if tokens.len() == 0 {
+                        tokens.push(Token::Slash);
+                        continue;
+                    }
+
+                    let last = tokens.pop().unwrap();
+                    match last {
+                        Token::Slash => {
+                            in_comment = true;
+                        },
+                        _ => {
+                            tokens.push(last);
+                            tokens.push(Token::Slash);
+                        }
+                    }
+                },
                 '=' => tokens.push(Token::Equal),
                 '(' => tokens.push(Token::LParen),
                 ')' => tokens.push(Token::RParen),

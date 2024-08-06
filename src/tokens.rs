@@ -26,6 +26,6 @@ pub enum Token {
     Identifier(String),
     Declaration(String, Box<Expr>),
     Assignment(String, Box<Expr>),
-    String(String), Number(i16)
+    String(String), Number(i16),
 }
 

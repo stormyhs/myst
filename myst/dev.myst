@@ -1,3 +1,6 @@
-let test = 5 + 5;
 
-print(test);
+let a = 1;
+// a = 100;
+let b = 2;
+
+println(a + b);

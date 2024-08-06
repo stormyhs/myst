@@ -1,16 +1,27 @@
+// We have `let`, and we have strings!
 let hello = "Hello! Let's add some numbers!";
 println(hello);
 
+// We can also add numbers!
 let a = 1;
 let b = 2;
 let c = a + b;
 print("The sum of `a` and `b` is: ");
 println(c);
 
+// The difference between `print` and `println` is that `println` adds a newline character at the end.
 println();
 
+// We have reassigned `a` and `b` to new values!
 a = 5;
 b = 10;
 println("We can also reassign `a` and `b` to new values! ");
 print("The new sum of `a` and `b` is: ");
 println(a + b);
+
+println();
+
+// We can chain arithmetic operations!
+let sum = 1 + 2 + 3 + 4 + 5;
+print("The sum of 1 + 2 + 3 + 4 + 5 is: ");
+println(sum);
