@@ -10,6 +10,8 @@ pub enum Expr {
     Number(i16),
     String(String),
     Identifier(String),
+    Function(String),
+    Call(String, Box<Vec<Expr>>),
     BinOp(Operator, Box<Expr>, Box<Expr>),
 }
 

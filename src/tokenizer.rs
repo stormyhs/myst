@@ -9,10 +9,6 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
 
     for line in lines {
         for c in line.chars() {
-            if debug_mode {
-                println!("tokens: {:?}", tokens);
-            }
-
             if c != '"' && in_string {
                 let last = tokens.pop().unwrap_or(Token::String(String::new()));
                 
@@ -46,9 +42,11 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                             tokens.push(Token::Number(new_number));
                         },
                         Token::String(s) => {
-                            tokens.pop();
                             tokens.push(Token::String(s + &c.to_string()));
                         },
+                        Token::Identifier(s) => {
+                            tokens.push(Token::Identifier(s + &c.to_string()));
+                        }
                         _ => {
                             tokens.push(last);
                             tokens.push(Token::Number(c.to_digit(10).unwrap() as i16));
@@ -59,27 +57,10 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 '-' => tokens.push(Token::Minus),
                 '*' => tokens.push(Token::Star),
                 '/' => tokens.push(Token::Slash),
-                '=' => {
-                    /*
-                    let last = tokens.pop().expect("Expected identifier before assignment");
-                    match &last {
-                        Token::Identifier(s) => {
-                            if s == "let" {
-                                tokens.push(Token::Let);
-                            }
-                        },
-                        _ => { }
-                    }
-                    tokens.push(last);
-                    tokens.push(Token::Equal)
-                    */
-                    tokens.push(Token::Equal)
-                },
+                '=' => tokens.push(Token::Equal),
                 '(' => tokens.push(Token::LParen),
                 ')' => tokens.push(Token::RParen),
-                '"' => {
-                    in_string = !in_string;
-                },
+                '"' => { in_string = !in_string; },
                 ';' => tokens.push(Token::Semicolon),
                 ' ' => {
                     if tokens.len() == 0 {

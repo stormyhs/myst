@@ -1,5 +1,16 @@
-myStr = "Hello! I am an example Myst source file."
-print(myStr)
+let hello = "Hello! Let's add some numbers!";
+println(hello);
 
-a = 10
-print(a)
+let a = 1;
+let b = 2;
+let c = a + b;
+print("The sum of `a` and `b` is: ");
+println(c);
+
+println();
+
+a = 5;
+b = 10;
+println("We can also reassign `a` and `b` to new values! ");
+print("The new sum of `a` and `b` is: ");
+println(a + b);

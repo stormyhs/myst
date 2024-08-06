@@ -13,6 +13,8 @@ mod tokens;
 mod engine;
 
 fn main() {
+    let start_time = std::time::Instant::now();
+
     let mut args: Vec<String> = env::args().collect();
     args.remove(0);
 
@@ -57,6 +59,15 @@ fn main() {
     }
 
     let result = engine::evaluate(parsed, &mut HashMap::new(), debug_mode);
-    println!("Program evaluated to: {:?}", result);
+    if debug_mode {
+        println!("Program evaluated to: {:?}", result);
+    }
+
+    // print out time it took to execute, with very high precision
+    let elapsed = start_time.elapsed();
+    let elapsed = elapsed.as_secs() as f64 + elapsed.subsec_nanos() as f64 * 1e-9;
+    if debug_mode {
+        println!("Execution took: {}s", elapsed);
+    }
 }
 

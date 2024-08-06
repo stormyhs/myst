@@ -5,12 +5,9 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
     let mut result: Vec<Expr> = Vec::new();
 
     let mut declaring_variable = false;
+
     
     while i < tokens.len() {
-        if debug_mode {
-            println!("Parsing token: {:?}", tokens[i]);
-        }
-
         // NOTE: The `Plus` match is the only one right now that works as intended. I will continue
         // to work on that one specifically, then move on to the others when the logic has been figured out.
         match &tokens[i] {
@@ -126,7 +123,6 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                 } else {
                     result.push(Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(left)), Box::new(right[0].clone())));
                 }
-
             },
             Token::String(c) => {
                 if result.len() > 0 {
@@ -156,7 +152,47 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
             Token::Let => {
                 declaring_variable = true;
             }
+            Token::LParen => {
+                let last = result.pop().unwrap();
+                match last {
+                    Expr::Identifier(n) => {
+                        result.push(Expr::Function(n.to_string()));
+                    },
+                    _ => {
+                        result.push(last);
+                    }
+                }
+            }
+            Token::RParen => {
+                // Get every previous token up until `LParen`, find identifier that comes before
+                // them, and convert it into a Function call.
 
+                let mut args: Vec<Expr> = Vec::new();
+                let mut created_call = false;
+
+                loop {
+                    let arg = match result.pop() {
+                        Some(token) => token,
+                        None => break
+                    };
+
+                    match arg {
+                        Expr::Function(n) => {
+                            result.push(Expr::Call(n.to_string(), Box::new(args)));
+                            created_call = true;
+                            break;
+                        },
+                        _ => {
+                            args.push(arg.clone());
+                        }
+                    }
+                }
+
+
+                if !created_call {
+                    panic!("Could not correctly parse function call and arguments");
+                }
+            }
             _ => {
                 if debug_mode {
                     println!("Ignoring token: {:?}", tokens[i]);

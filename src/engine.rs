@@ -4,10 +4,6 @@ use crate::tokens::{Expr, Operator};
 pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: bool) -> Vec<Expr> {
     let mut result: Vec<Expr> = Vec::new();
 
-    if debug_mode {
-        println!("Evaluating expression: {:?}", expr);
-    }
-
     let mut i = 0;
     while i < expr.len() {
         match &expr[i] {
@@ -52,10 +48,6 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                             _ => { panic!("Invalid operator for two number values: {:?}", op) }
                         }
                     },
-                    _ => { }
-                }
-
-                match (&left[0], &right[0]) {
                     (Expr::Identifier(l), Expr::Number(n)) => {
                         match *op {
                             Operator::Declare => {
@@ -77,6 +69,27 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                             _ => { panic!("Cannot operate on undefined variable"); }
                         }
                     },
+                    (Expr::Identifier(l), Expr::String(n)) => {
+                        match *op {
+                            Operator::Declare => {
+                                if state.contains_key(&format!("{}", l)) {
+                                    panic!("Cannot redeclare variable: {}", l);
+                                }
+
+                                state.insert(format!("{}", l), Expr::String(n.to_string()));
+                                did_operate = true;
+                            },
+                            Operator::Assign => {
+                                if !state.contains_key(&format!("{}", l)) {
+                                    panic!("Cannot assign to undeclared variable: {}", l);
+                                }
+
+                                state.insert(format!("{}", l), Expr::String(n.to_string()));
+                                did_operate = true;
+                            },
+                            _ => { panic!("Invalid operator on variable and string: {:?}", op); }
+                        }
+                    }
                     _ => { }
                 }
 
@@ -95,6 +108,45 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                     result.push(state[s].clone());
                 } else {
                     result.push(Expr::Identifier(s.to_string()));
+                }
+            },
+            Expr::Call(function, args) => {
+                if function == "print" {
+                    let mut i = 0;
+                    while i < args.len() {
+                        let value = evaluate(vec![args[i].clone()], state, debug_mode);
+                        let value = &value[0];
+                        match value {
+                            Expr::String(s) => {
+                                print!("{s}");
+                            },
+                            Expr::Number(n) => {
+                                print!("{n}");
+                            },
+                            _ => { panic!("Invalid argument to print"); }
+                        };
+                        i += 1;
+                    }
+                }
+                else if function == "println" {
+                    let mut i = 0;
+                    while i < args.len() {
+                        let value = evaluate(vec![args[i].clone()], state, debug_mode);
+                        let value = &value[0];
+                        match value {
+                            Expr::String(s) => {
+                                print!("{s}");
+                            },
+                            Expr::Number(n) => {
+                                print!("{n}");
+                            },
+                            _ => { panic!("Invalid argument to println"); }
+                        };
+                        i += 1;
+                    }
+                    println!();
+                } else {
+                    panic!("Unknown function: {}", function);
                 }
             },
             _ => {}
