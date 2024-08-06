@@ -84,6 +84,8 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 ')' => tokens.push(Token::RParen),
                 '"' => { in_string = !in_string; },
                 ';' => tokens.push(Token::Semicolon),
+                '{' => tokens.push(Token::LCurly),
+                '}' => tokens.push(Token::RCurly),
                 ' ' => {
                     if tokens.len() == 0 {
                         continue;
@@ -94,6 +96,8 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                         Token::Identifier(s) => {
                             if s == "let" {
                                 tokens.push(Token::Let);
+                            } else if s == "if" {
+                                tokens.push(Token::If(Box::new(Expr::Number(0)), Vec::new(), Vec::new()));
                             } else {
                                 tokens.push(Token::Identifier(s));
                             }

@@ -193,6 +193,44 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     panic!("Could not correctly parse function call and arguments");
                 }
             }
+            Token::LCurly => {
+                if result.len() == 0 {
+                    panic!("Expected condition before block");
+                }
+            },
+            Token::RCurly => {
+                if result.len() == 0 {
+                    panic!("Unexpected end of block");
+                }
+
+                let mut block: Vec<Expr> = Vec::new();
+
+                loop {
+                    let expr = match result.pop() {
+                        Some(token) => token,
+                        None => break
+                    };
+
+                    match expr {
+                        Expr::If(c, t, f) => {
+                            let condition = block.pop().unwrap(); // TODO: For now, the last thing is always the condition,
+                            // which shouldn't be in the block. This will be fixed later.
+                            
+                            block.reverse(); // Because we got the block's contents in reverse, we
+                            // have to cope.
+
+                            result.push(Expr::If(Box::new(condition.clone()), Box::new(block), Box::new(Vec::new())));
+                            break;
+                        },
+                        _ => {
+                            block.push(expr.clone());
+                        }
+                    }
+                }
+            },
+            Token::If(c, t, f) => {
+                result.push(Expr::If(Box::new(*c.clone()), Box::new(t.clone()), Box::new(f.clone())));
+            },
             _ => {
                 if debug_mode {
                     println!("Ignoring token: {:?}", tokens[i]);

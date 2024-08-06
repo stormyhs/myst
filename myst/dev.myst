@@ -1,6 +1,6 @@
 
-let a = 1;
-// a = 100;
-let b = 2;
+let condition = 1;
 
-println(a + b);
+if condition {
+    println("hello iam if true");
+}

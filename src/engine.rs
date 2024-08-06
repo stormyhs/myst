@@ -55,6 +55,7 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                                     panic!("Cannot redeclare variable: {}", l);
                                 }
 
+                                println!("Declaring variable: {}", l);
                                 state.insert(format!("{}", l), Expr::Number(*n));
                                 did_operate = true;
                             },
@@ -107,6 +108,7 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                 if state.contains_key(s) {
                     result.push(state[s].clone());
                 } else {
+                    println!("Variable not found: {}", s);
                     result.push(Expr::Identifier(s.to_string()));
                 }
             },
@@ -140,7 +142,7 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                             Expr::Number(n) => {
                                 print!("{n}");
                             },
-                            _ => { panic!("Invalid argument to println"); }
+                            _ => { panic!("Invalid argument to println: {:?}", value); }
                         };
                         i += 1;
                     }
@@ -149,6 +151,21 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                     panic!("Unknown function: {}", function);
                 }
             },
+            Expr::If(c, t, f) => {
+                let condition = evaluate(vec![*c.clone()], state, debug_mode);
+                let condition = &condition[0];
+
+                match condition {
+                    Expr::Number(n) => {
+                        if *n == 1 {
+                            result.extend(evaluate(*t.clone(), state, debug_mode));
+                        } else {
+                            result.extend(evaluate(*f.clone(), state, debug_mode));
+                        }
+                    },
+                    _ => { panic!("Invalid condition in if statement"); }
+                }
+            }
             _ => {}
         }
 

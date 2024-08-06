@@ -25,3 +25,11 @@ println();
 let sum = 1 + 2 + 3 + 4 + 5;
 print("The sum of 1 + 2 + 3 + 4 + 5 is: ");
 println(sum);
+
+println();
+
+// If statements exist!
+let condition = 1; // Booleans aren't real yet. 1s and 0s are all we need.
+if condition {
+    println("We have conditionals as well!");
+}
