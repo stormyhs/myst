@@ -49,10 +49,11 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     panic!("Expected number after operator");
                 }
 
-                let left = result.pop().expect("Expected number before operator");
-                let right = match tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(n),
-                    _ => panic!("Expected number after operator")
+                let left = result.pop().expect("Expected value or variable before operator");
+                let right = match &tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(*n),
+                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
+                    _ => panic!("Expected value or variable before operator")
                 };
 
                 i += 1;
@@ -64,10 +65,11 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     panic!("Expected number after operator");
                 }
 
-                let left = result.pop().expect("Expected number before operator");
-                let right = match tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(n),
-                    _ => panic!("Expected number after operator")
+                let left = result.pop().expect("Expected value or variable before operator");
+                let right = match &tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(*n),
+                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
+                    _ => panic!("Expected value or variable before operator")
                 };
 
                 i += 1;
@@ -79,10 +81,11 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     panic!("Expected number after operator");
                 }
 
-                let left = result.pop().expect("Expected number before operator");
-                let right = match tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(n),
-                    _ => panic!("Expected number after operator")
+                let left = result.pop().expect("Expected value or variable before operator");
+                let right = match &tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(*n),
+                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
+                    _ => panic!("Expected value or variable before operator")
                 };
 
                 i += 1;
