@@ -6,26 +6,25 @@ Its syntax will be similar to TypeScript, but its behavior will seek to avoid th
 
 Currently, Myst is tokenized, parsed, and interpreted using Rust. In the future Myst will be compiled (or JITed) using a custom bytecode runtime.
 
-### How to run
-In this stage of development, it is suggested you use Rust's `cargo` to run Myst.
+## How to run
+
+Compiling a `myst` executable and having a `.myst` source file is all that is needed to run Myst. The executable simply takes in a path to a `.myst` file and attempts to run it.
 
 An example of running `myst/example.myst`:
 ```bash
 cargo r myst/example.myst
 ```
 
-### Notes
-Myst also takes some CLI arguments. You can use `--debug` for debugging information as the program runs, or `--repl` to evaluate code live, as the user feeds input source code.
-
-To do this through `cargo`, you would use this command:
-```bash
-cargo r myst/example.myst -- --debug
-```
-
 Or, if you are running a complied executable directly:
 ```bash
-./myst myst/example.myst --debug
+./myst myst/example.myst
 ```
+
+For debug information, use the `--debug` flag.
+
+Please note that if you are using cargo to run myst, you need `-- --debug` to pass in arguments to the executable, rather than to cargo.
+
+---
 
 ### Licensing
 This project is multi-licensed under both GPLv3, as well as the Non AI Usage License. Both licenses apply simultaniously.
