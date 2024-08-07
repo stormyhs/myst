@@ -79,13 +79,31 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                         }
                     }
                 },
-                '=' => tokens.push(Token::Equal),
+                '=' => {
+                    if tokens.len() == 0 {
+                        tokens.push(Token::Equal);
+                        continue;
+                    }
+
+                    let last = tokens.pop().unwrap();
+                    match last {
+                        Token::Equal => {
+                            tokens.push(Token::Equality);
+                        },
+                        _ => {
+                            tokens.push(last);
+                            tokens.push(Token::Equal);
+                        }
+                    }
+                },
                 '(' => tokens.push(Token::LParen),
                 ')' => tokens.push(Token::RParen),
-                '"' => { in_string = !in_string; },
+                '"' => in_string = !in_string,
                 ';' => tokens.push(Token::Semicolon),
                 '{' => tokens.push(Token::LCurly),
                 '}' => tokens.push(Token::RCurly),
+                '>' => tokens.push(Token::RArrow),
+                '<' => tokens.push(Token::LArrow),
                 ' ' => {
                     if tokens.len() == 0 {
                         continue;
@@ -132,7 +150,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                                 if c.is_alphabetic() {
                                     tokens.push(Token::Identifier(name + &c.to_string()));
                                 } else {
-                                    panic!("Identifier must be alphanumeric");
+                                    panic!("Identifier must be alphanumeric: {name}{c}");
                                 }
                             },
                             Token::Equal => {

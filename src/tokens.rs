@@ -1,6 +1,7 @@
 #[derive(Debug, Clone)]
 pub enum Operator {
     Add, Subtract, Multiply, Divide,
+    Equality, Lesser, Greater,
     Declare, Assign
 }
 
@@ -20,9 +21,10 @@ pub enum Expr {
 pub enum Token {
     LParen, RParen,
     LCurly, RCurly,
+    LArrow, RArrow,
     DoubleQuote,
     Plus, Minus, Star, Slash,
-    Equal,
+    Equal, Equality,
     Semicolon,
     Identifier(String),
     Declaration(String, Box<Expr>),

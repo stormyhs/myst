@@ -6,7 +6,6 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
     let mut declaring_variable = false;
 
-    
     while i < tokens.len() {
         // NOTE: The `Plus` match is the only one right now that works as intended. I will continue
         // to work on that one specifically, then move on to the others when the logic has been figured out.
@@ -96,9 +95,6 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                 if tokens.len() < i + 1 {
                     panic!("Expected number after operator");
                 }
-
-                // Get every next token until a semicolon, parse it, then push a
-                // `Expr::BinOp('=')` with the left side being the variable and the right side being the parsed expression
 
                 let left = match result.pop().expect("Expected variable before operator") {
                     Expr::Identifier(s) => s,
@@ -231,8 +227,56 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     }
                 }
             },
+            Token::LArrow => {
+                if tokens.len() < i + 1 {
+                    panic!("Expected number after operator");
+                }
+
+                let left = result.pop().expect("Expected value or variable before operator");
+                let right = match &tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(*n),
+                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
+                    _ => panic!("Expected value or variable before operator")
+                };
+
+                i += 1;
+
+                result.push(Expr::BinOp(Operator::Lesser, Box::new(left), Box::new(right)));
+            },
+            Token::RArrow => {
+                if tokens.len() < i + 1 {
+                    panic!("Expected number after operator");
+                }
+
+                let left = result.pop().expect("Expected value or variable before operator");
+                let right = match &tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(*n),
+                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
+                    _ => panic!("Expected value or variable before operator")
+                };
+
+                i += 1;
+
+                result.push(Expr::BinOp(Operator::Greater, Box::new(left), Box::new(right)));
+            },
             Token::If(c, t, f) => {
                 result.push(Expr::If(Box::new(*c.clone()), Box::new(t.clone()), Box::new(f.clone())));
+            },
+            Token::Equality => {
+                if tokens.len() < i + 1 {
+                    panic!("Expected number after operator");
+                }
+
+                let left = result.pop().expect("Expected value or variable before operator");
+                let right = match &tokens[i + 1] {
+                    Token::Number(n) => Expr::Number(*n),
+                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
+                    _ => panic!("Expected value or variable before operator")
+                };
+
+                i += 1;
+
+                result.push(Expr::BinOp(Operator::Equality, Box::new(left), Box::new(right)));
             },
             _ => {
                 if debug_mode {

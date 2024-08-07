@@ -45,6 +45,18 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                                 result.push(Expr::Number(l / r));
                                 did_operate = true;
                             },
+                            Operator::Equality => {
+                                result.push(Expr::Number(if l == r { 1 } else { 0 }));
+                                did_operate = true;
+                            },
+                            Operator::Lesser => {
+                                result.push(Expr::Number(if l < r { 1 } else { 0 }));
+                                did_operate = true;
+                            },
+                            Operator::Greater => {
+                                result.push(Expr::Number(if l > r { 1 } else { 0 }));
+                                did_operate = true;
+                            },
                             _ => { panic!("Invalid operator for two number values: {:?}", op) }
                         }
                     },
@@ -72,6 +84,60 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                                 }
 
                                 state.insert(format!("{}", l), Expr::Number(*n));
+                                did_operate = true;
+                            },
+                            Operator::Equality => {
+                                if !state.contains_key(&format!("{}", l)) {
+                                    panic!("Cannot compare undeclared variable: {}", l);
+                                }
+
+                                if debug_mode {
+                                    println!("Comparing variable: {}", l);
+                                }
+
+                                let value = state[&format!("{}", l)].clone();
+                                match value {
+                                    Expr::Number(v) => {
+                                        result.push(Expr::Number(if v == *n { 1 } else { 0 }));
+                                    },
+                                    _ => { panic!("Cannot compare non-number variable: {}", l); }
+                                }
+                                did_operate = true;
+                            },
+                            Operator::Lesser => {
+                                if !state.contains_key(&format!("{}", l)) {
+                                    panic!("Cannot compare undeclared variable: {}", l);
+                                }
+
+                                if debug_mode {
+                                    println!("Comparing variable: {}", l);
+                                }
+
+                                let value = state[&format!("{}", l)].clone();
+                                match value {
+                                    Expr::Number(v) => {
+                                        result.push(Expr::Number(if v < *n { 1 } else { 0 }));
+                                    },
+                                    _ => { panic!("Cannot compare non-number variable: {}", l); }
+                                }
+                                did_operate = true;
+                            },
+                            Operator::Greater => {
+                                if !state.contains_key(&format!("{}", l)) {
+                                    panic!("Cannot compare undeclared variable: {}", l);
+                                }
+
+                                if debug_mode {
+                                    println!("Comparing variable: {}", l);
+                                }
+
+                                let value = state[&format!("{}", l)].clone();
+                                match value {
+                                    Expr::Number(v) => {
+                                        result.push(Expr::Number(if v > *n { 1 } else { 0 }));
+                                    },
+                                    _ => { panic!("Cannot compare non-number variable: {}", l); }
+                                }
                                 did_operate = true;
                             },
                             _ => { panic!("Cannot operate on undefined variable"); }
@@ -102,7 +168,7 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
 
                                 state.insert(format!("{}", l), Expr::String(n.to_string()));
                                 did_operate = true;
-                            },
+                            }
                             _ => { panic!("Invalid operator on variable and string: {:?}", op); }
                         }
                     }
