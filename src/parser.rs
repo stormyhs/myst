@@ -221,6 +221,16 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                             result.push(Expr::If(Box::new(condition.clone()), Box::new(block), Box::new(Vec::new())));
                             break;
                         },
+                        Expr::While(c, b) => {
+                            let condition = block.pop().unwrap(); // TODO: For now, the last thing is always the condition,
+                            // which shouldn't be in the block. This will be fixed later.
+                            
+                            block.reverse(); // Because we got the block's contents in reverse, we
+                            // have to cope.
+
+                            result.push(Expr::While(Box::new(condition.clone()), Box::new(block)));
+                            break;
+                        },
                         _ => {
                             block.push(expr.clone());
                         }
@@ -261,6 +271,9 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
             },
             Token::If(c, t, f) => {
                 result.push(Expr::If(Box::new(*c.clone()), Box::new(t.clone()), Box::new(f.clone())));
+            },
+            Token::While(c, b) => {
+                result.push(Expr::While(Box::new(*c.clone()), Box::new(b.clone())));
             },
             Token::Equality => {
                 if tokens.len() < i + 1 {

@@ -1,6 +1,13 @@
+// loop tests
 
-let condition = 1;
+// let max = 100000000;
+let max = 100000;
+let i = 0;
 
-if condition {
-    println("hello iam if true");
+while i < max {
+    i = i + 1;
+
+    // println(i);
 }
+
+

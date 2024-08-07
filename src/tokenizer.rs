@@ -36,7 +36,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                     // If the last token is a number, append the digit to it.
                     // Otherwise, push a new number token.
                     if tokens.len() == 0 {
-                        tokens.push(Token::Number(c.to_digit(10).unwrap() as i16));
+                        tokens.push(Token::Number(c.to_digit(10).unwrap() as i64));
                         continue;
                     }
 
@@ -44,7 +44,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
 
                     match last {
                         Token::Number(n) => {
-                            let new_number = n * 10 + c.to_digit(10).unwrap() as i16;
+                            let new_number = n * 10 + c.to_digit(10).unwrap() as i64;
                             tokens.push(Token::Number(new_number));
                         },
                         Token::String(s) => {
@@ -55,7 +55,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                         }
                         _ => {
                             tokens.push(last);
-                            tokens.push(Token::Number(c.to_digit(10).unwrap() as i16));
+                            tokens.push(Token::Number(c.to_digit(10).unwrap() as i64));
                         }
                     }
                 },
@@ -116,6 +116,8 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                                 tokens.push(Token::Let);
                             } else if s == "if" {
                                 tokens.push(Token::If(Box::new(Expr::Number(0)), Vec::new(), Vec::new()));
+                            } else if s == "while" {
+                                tokens.push(Token::While(Box::new(Expr::Number(0)), Vec::new()));
                             } else {
                                 tokens.push(Token::Identifier(s));
                             }

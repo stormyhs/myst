@@ -65,8 +65,8 @@ fn main() {
 
     let elapsed = start_time.elapsed();
     let elapsed = elapsed.as_secs() as f64 + elapsed.subsec_nanos() as f64 * 1e-9;
-    if debug_mode {
+    //if debug_mode {
         println!("Execution took: {}s", elapsed);
-    }
+    //}
 }
 

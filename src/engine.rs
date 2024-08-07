@@ -67,20 +67,12 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                                     panic!("Cannot redeclare variable: {}", l);
                                 }
 
-                                if debug_mode {
-                                    println!("Declaring variable: {}", l);
-                                }
-
                                 state.insert(format!("{}", l), Expr::Number(*n));
                                 did_operate = true;
                             },
                             Operator::Assign => {
                                 if !state.contains_key(&format!("{}", l)) {
                                     panic!("Cannot assign to undeclared variable: {}", l);
-                                }
-
-                                if debug_mode {
-                                    println!("Assigning variable: {}", l);
                                 }
 
                                 state.insert(format!("{}", l), Expr::Number(*n));
@@ -150,20 +142,12 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                                     panic!("Cannot redeclare variable: {}", l);
                                 }
 
-                                if debug_mode {
-                                    println!("Declaring variable: {}", l);
-                                }
-
                                 state.insert(format!("{}", l), Expr::String(n.to_string()));
                                 did_operate = true;
                             },
                             Operator::Assign => {
                                 if !state.contains_key(&format!("{}", l)) {
                                     panic!("Cannot assign to undeclared variable: {}", l);
-                                }
-
-                                if debug_mode {
-                                    println!("Assigning variable: {}", l);
                                 }
 
                                 state.insert(format!("{}", l), Expr::String(n.to_string()));
@@ -246,7 +230,25 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                     },
                     _ => { panic!("Invalid condition in if statement"); }
                 }
-            }
+            },
+            Expr::While(c, b) => {
+                loop {
+                    let condition = evaluate(vec![*c.clone()], state, debug_mode);
+                    let condition = &condition[0];
+
+                    match condition {
+                        Expr::Number(n) => {
+                            if *n == 1 {
+                                // Run the block
+                                result.extend(evaluate(*b.clone(), state, debug_mode));
+                            } else {
+                                break;
+                            }
+                        },
+                        _ => { panic!("Invalid condition in while statement"); }
+                    }
+                }
+            },
             _ => {}
         }
 

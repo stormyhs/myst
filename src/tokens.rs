@@ -9,7 +9,8 @@ pub enum Operator {
 pub enum Expr {
     Let,
     If(Box<Expr>, Box<Vec<Expr>>, Box<Vec<Expr>>),
-    Number(i16),
+    While(Box<Expr>, Box<Vec<Expr>>),
+    Number(i64),
     String(String),
     Identifier(String),
     Function(String),
@@ -29,10 +30,11 @@ pub enum Token {
     Identifier(String),
     Declaration(String, Box<Expr>),
     Assignment(String, Box<Expr>),
-    String(String), Number(i16),
+    String(String), Number(i64),
 
     // Keywords
     Let,
     If(Box<Expr>, Vec<Expr>, Vec<Expr>),
+    While(Box<Expr>, Vec<Expr>),
 }
 
