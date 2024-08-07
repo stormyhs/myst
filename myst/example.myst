@@ -42,3 +42,14 @@ println();
 if 420 > 69 {
     println("🚬"); // Emojis in my print... 🙀
 }
+
+println();
+
+// Loopy loop
+let max = 5;
+let count = 0;
+while count < max {
+    println("Myst is cool!");
+    count = count + 1;
+}
+
