@@ -55,13 +55,20 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                                     panic!("Cannot redeclare variable: {}", l);
                                 }
 
-                                println!("Declaring variable: {}", l);
+                                if debug_mode {
+                                    println!("Declaring variable: {}", l);
+                                }
+
                                 state.insert(format!("{}", l), Expr::Number(*n));
                                 did_operate = true;
                             },
                             Operator::Assign => {
                                 if !state.contains_key(&format!("{}", l)) {
                                     panic!("Cannot assign to undeclared variable: {}", l);
+                                }
+
+                                if debug_mode {
+                                    println!("Assigning variable: {}", l);
                                 }
 
                                 state.insert(format!("{}", l), Expr::Number(*n));
@@ -77,12 +84,20 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                                     panic!("Cannot redeclare variable: {}", l);
                                 }
 
+                                if debug_mode {
+                                    println!("Declaring variable: {}", l);
+                                }
+
                                 state.insert(format!("{}", l), Expr::String(n.to_string()));
                                 did_operate = true;
                             },
                             Operator::Assign => {
                                 if !state.contains_key(&format!("{}", l)) {
                                     panic!("Cannot assign to undeclared variable: {}", l);
+                                }
+
+                                if debug_mode {
+                                    println!("Assigning variable: {}", l);
                                 }
 
                                 state.insert(format!("{}", l), Expr::String(n.to_string()));

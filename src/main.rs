@@ -63,7 +63,6 @@ fn main() {
         println!("Program evaluated to: {:?}", result);
     }
 
-    // print out time it took to execute, with very high precision
     let elapsed = start_time.elapsed();
     let elapsed = elapsed.as_secs() as f64 + elapsed.subsec_nanos() as f64 * 1e-9;
     if debug_mode {
