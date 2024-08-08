@@ -28,6 +28,8 @@ println(sum);
 let condition = 1; // Booleans aren't real yet. 1s and 0s are all we need, anyways :)
 if condition {
     println("We have conditionals as well!");
+} else {
+    println("Eh, who needs conditions anyways");
 }
 
 

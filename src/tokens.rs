@@ -8,7 +8,8 @@ pub enum Operator {
 #[derive(Debug, Clone)]
 pub enum Expr {
     Let,
-    If(Box<Expr>, Box<Vec<Expr>>, Box<Vec<Expr>>),
+    If(Box<Expr>, Box<Vec<Expr>>),
+    Else(Box<Expr>, Box<Vec<Expr>>),
     While(Box<Expr>, Box<Vec<Expr>>),
     Number(i64),
     String(String),
@@ -34,7 +35,8 @@ pub enum Token {
 
     // Keywords
     Let,
-    If(Box<Expr>, Vec<Expr>, Vec<Expr>),
+    If(Box<Expr>, Vec<Expr>),
+    Else(Box<Expr>, Vec<Expr>),
     While(Box<Expr>, Vec<Expr>),
 }
 

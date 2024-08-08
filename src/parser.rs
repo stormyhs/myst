@@ -211,14 +211,40 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     };
 
                     match expr {
-                        Expr::If(c, t, f) => {
+                        Expr::If(c, t) => {
                             let condition = block.pop().unwrap(); // TODO: For now, the last thing is always the condition,
                             // which shouldn't be in the block. This will be fixed later.
                             
                             block.reverse(); // Because we got the block's contents in reverse, we
                             // have to cope.
 
-                            result.push(Expr::If(Box::new(condition.clone()), Box::new(block), Box::new(Vec::new())));
+                            result.push(Expr::If(Box::new(condition.clone()), Box::new(block)));
+                            break;
+                        },
+                        Expr::Else(c, t) => {
+                            // The condition needs to be taken from a previous `If` statement.
+                            // So we loop backwards until we find an `If` statement, and take the
+                            // condition from that.
+
+                            let mut condition = Expr::Number(69);
+                            let mut i = result.len() - 1;
+                            
+                            loop {
+                                 match &result[i] {
+                                    Expr::If(c, t) => {
+                                        condition = *c.clone();
+                                        break;
+                                    },
+                                    _ => { }
+                                }
+
+                                i -= 1;
+                            }
+
+                            block.reverse(); // Because we got the block's contents in reverse, we
+                            // have to cope.
+
+                            result.push(Expr::Else(Box::new(condition.clone()), Box::new(block)));
                             break;
                         },
                         Expr::While(c, b) => {
@@ -269,8 +295,11 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 result.push(Expr::BinOp(Operator::Greater, Box::new(left), Box::new(right)));
             },
-            Token::If(c, t, f) => {
-                result.push(Expr::If(Box::new(*c.clone()), Box::new(t.clone()), Box::new(f.clone())));
+            Token::If(c, t) => {
+                result.push(Expr::If(Box::new(*c.clone()), Box::new(t.clone())));
+            },
+            Token::Else(c, t) => {
+                result.push(Expr::Else(Box::new(*c.clone()), Box::new(t.clone())));
             },
             Token::While(c, b) => {
                 result.push(Expr::While(Box::new(*c.clone()), Box::new(b.clone())));

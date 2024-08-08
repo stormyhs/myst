@@ -137,7 +137,9 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                             if s == "let" {
                                 tokens.push(Token::Let);
                             } else if s == "if" {
-                                tokens.push(Token::If(Box::new(Expr::Number(0)), Vec::new(), Vec::new()));
+                                tokens.push(Token::If(Box::new(Expr::Number(0)), Vec::new()));
+                            } else if s == "else" {
+                                tokens.push(Token::Else(Box::new(Expr::Number(0)), Vec::new()));
                             } else if s == "while" {
                                 tokens.push(Token::While(Box::new(Expr::Number(0)), Vec::new()));
                             } else {

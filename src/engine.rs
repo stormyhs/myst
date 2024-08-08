@@ -216,7 +216,7 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                     panic!("Unknown function: {}", function);
                 }
             },
-            Expr::If(c, t, f) => {
+            Expr::If(c, t) => {
                 let condition = evaluate(vec![*c.clone()], state, debug_mode);
                 let condition = &condition[0];
 
@@ -224,11 +224,22 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                     Expr::Number(n) => {
                         if *n == 1 {
                             result.extend(evaluate(*t.clone(), state, debug_mode));
-                        } else {
-                            result.extend(evaluate(*f.clone(), state, debug_mode));
                         }
                     },
                     _ => { panic!("Invalid condition in if statement"); }
+                }
+            },
+            Expr::Else(c, t) => {
+                let condition = evaluate(vec![*c.clone()], state, debug_mode);
+                let condition = &condition[0];
+
+                match condition {
+                    Expr::Number(n) => {
+                        if *n == 0 {
+                            result.extend(evaluate(*t.clone(), state, debug_mode));
+                        }
+                    },
+                    _ => { panic!("Invalid condition in else statement"); }
                 }
             },
             Expr::While(c, b) => {
