@@ -1,55 +1,41 @@
 // Myst showcase code
 
-// We have `let`, and we have strings
-let hello = "Hello! Let's add some numbers!";
-println(hello);
 
-// We can also add numbers
+// Hello, world!
+print("Hello, ");  // `print` only prints the given string
+println("world!"); // `println` adds a newline at the end
+
+
+// Variable declarations
 let a = 1;
 let b = 2;
 let c = a + b;
-print("The sum of `a` and `b` is: ");
 println(c);
 
-// The difference between `print` and `println` is that `println` adds a newline character at the end
-println();
 
-// We have reassigned `a` and `b` to new values
-a = 5;
-b = 10;
-println("We can also reassign `a` and `b` to new values! ");
-print("The new sum of `a` and `b` is: ");
+// Variable reassignments
+a = 50;
+b = 100_000; // We can use `_` to make numbers human readable.
 println(a + b);
 
-println();
 
-// We can chain arithmetic operations
+// Arithmetic operations
 let sum = 1 + 2 + 3 + 4 + 5;
-print("The sum of 1 + 2 + 3 + 4 + 5 is: ");
 println(sum);
 
-println();
 
-// If statements exist
-let condition = 1; // Booleans aren't real yet. 1s and 0s are all we need.
+// If statements
+let condition = 1; // Booleans aren't real yet. 1s and 0s are all we need, anyways :)
 if condition {
     println("We have conditionals as well!");
 }
 
-println();
 
-// We have comparisons as well
-if 420 > 69 {
-    println("🚬"); // Emojis in my print... 🙀
-}
-
-println();
-
-// Loopy loop
+// Loops
 let max = 5;
 let count = 0;
-while count < max {
-    println("Myst is cool!");
+while count < 5 { // Fun fact, the `count < 5` just resolves to `1`, which means True.
+    println("I am a loop!");
     count = count + 1;
 }
 
