@@ -59,6 +59,28 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                         }
                     }
                 },
+                '_' => {
+                    if tokens.len() == 0 {
+                        panic!("Unexpected character: _");
+                    }
+
+                    let last = tokens.pop().unwrap();
+                    match last {
+                        Token::Identifier(s) => {
+                            tokens.push(Token::Identifier(s + &c.to_string()));
+                        },
+                        Token::Number(_n) => {
+                            tokens.push(last);
+                            // Do nothing. This means that we can have numbers like 1_000_000,
+                            // which are more human readable.
+                        },
+                        _ => {
+                            tokens.push(last);
+                            tokens.push(Token::Identifier(c.to_string()));
+                        }
+                    }
+
+                },
                 '+' => tokens.push(Token::Plus),
                 '-' => tokens.push(Token::Minus),
                 '*' => tokens.push(Token::Star),
