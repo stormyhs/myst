@@ -41,3 +41,14 @@ while count < 5 { // Fun fact, the `count < 5` just resolves to `1`, which means
     count = count + 1;
 }
 
+
+// Nesting
+max = 10;
+count = 1;
+
+while count < max {
+    if count < 5 {
+        println(count);
+    }
+    count = count + 1;
+}

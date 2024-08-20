@@ -192,77 +192,8 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     panic!("Could not correctly parse function call and arguments");
                 }
             }
-            Token::LCurly => {
-                if result.len() == 0 {
-                    panic!("Expected condition before block");
-                }
-            },
-            Token::RCurly => {
-                if result.len() == 0 {
-                    panic!("Unexpected end of block");
-                }
-
-                let mut block: Vec<Expr> = Vec::new();
-
-                loop {
-                    let expr = match result.pop() {
-                        Some(token) => token,
-                        None => break
-                    };
-
-                    match expr {
-                        Expr::If(c, t) => {
-                            let condition = block.pop().unwrap(); // TODO: For now, the last thing is always the condition,
-                            // which shouldn't be in the block. This will be fixed later.
-                            
-                            block.reverse(); // Because we got the block's contents in reverse, we
-                            // have to cope.
-
-                            result.push(Expr::If(Box::new(condition.clone()), Box::new(block)));
-                            break;
-                        },
-                        Expr::Else(c, t) => {
-                            // The condition needs to be taken from a previous `If` statement.
-                            // So we loop backwards until we find an `If` statement, and take the
-                            // condition from that.
-
-                            let mut condition = Expr::Number(69);
-                            let mut i = result.len() - 1;
-                            
-                            loop {
-                                 match &result[i] {
-                                    Expr::If(c, t) => {
-                                        condition = *c.clone();
-                                        break;
-                                    },
-                                    _ => { }
-                                }
-
-                                i -= 1;
-                            }
-
-                            block.reverse(); // Because we got the block's contents in reverse, we
-                            // have to cope.
-
-                            result.push(Expr::Else(Box::new(condition.clone()), Box::new(block)));
-                            break;
-                        },
-                        Expr::While(c, b) => {
-                            let condition = block.pop().unwrap(); // TODO: For now, the last thing is always the condition,
-                            // which shouldn't be in the block. This will be fixed later.
-                            
-                            block.reverse(); // Because we got the block's contents in reverse, we
-                            // have to cope.
-
-                            result.push(Expr::While(Box::new(condition.clone()), Box::new(block)));
-                            break;
-                        },
-                        _ => {
-                            block.push(expr.clone());
-                        }
-                    }
-                }
-            },
+            Token::LCurly => { },
+            Token::RCurly => { },
             Token::LArrow => {
                 if tokens.len() < i + 1 {
                     panic!("Expected number after operator");
@@ -296,13 +227,149 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                 result.push(Expr::BinOp(Operator::Greater, Box::new(left), Box::new(right)));
             },
             Token::If(c, t) => {
-                result.push(Expr::If(Box::new(*c.clone()), Box::new(t.clone())));
+                let mut condition: Vec<Token> = Vec::new();
+
+                loop {
+                    i += 1; // Skip the `if` token
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::LCurly => {
+                            break;
+                        },
+                        _ => {
+                            condition.push(token);
+                        }
+                    }
+                }
+
+                let condition = parse(condition, debug_mode);
+
+                let mut block: Vec<Token> = Vec::new();
+                let mut skip_curlys = 0;
+                loop {
+                    if i >= tokens.len() {
+                        break;
+                    }
+
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::LCurly => {
+                            skip_curlys += 1;
+                            block.push(token);
+                        },
+                        Token::RCurly => {
+                            skip_curlys -= 1;
+                            block.push(token);
+                            if skip_curlys == 0 {
+                                break;
+                            }
+                        },
+                        _ => {
+                            block.push(token);
+                        }
+                    }
+                    i += 1;
+                }
+
+                let block = parse(block, debug_mode);
+
+                result.push(Expr::If(Box::new(condition[0].clone()), Box::new(block.clone())));
             },
             Token::Else(c, t) => {
-                result.push(Expr::Else(Box::new(*c.clone()), Box::new(t.clone())));
+                let mut block: Vec<Token> = Vec::new();
+                let mut skip_curlys = 0;
+
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::LCurly => {
+                            skip_curlys += 1;
+                            block.push(token);
+                        },
+                        Token::RCurly => {
+                            skip_curlys -= 1;
+                            block.push(token);
+                            if skip_curlys == 0 {
+                                break;
+                            }
+                        },
+                        _ => {
+                            block.push(token);
+                        }
+                    }
+                }
+
+                let block = parse(block, debug_mode);
+
+                let if_statement = result.pop().expect("Expected if statement before else");
+                let condition = match &if_statement {
+                    Expr::If(c, _) => c,
+                    _ => panic!("Expected if statement before else")
+                };
+
+                result.push(if_statement.clone());
+                result.push(Expr::Else(condition.clone(), Box::new(block.clone())));
             },
             Token::While(c, b) => {
-                result.push(Expr::While(Box::new(*c.clone()), Box::new(b.clone())));
+                let mut condition: Vec<Token> = Vec::new();
+
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::LCurly => {
+                            condition.push(token);
+                            break;
+                        },
+                        _ => {
+                            condition.push(token);
+                        }
+                    }
+                }
+
+                let condition = parse(condition, debug_mode);
+
+                let mut block: Vec<Token> = Vec::new();
+                let mut skip_curlys = 0;
+
+                loop {
+                    if i >= tokens.len() {
+                        break;
+                    }
+
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::LCurly => {
+                            skip_curlys += 1;
+                            block.push(token);
+                        },
+                        Token::RCurly => {
+                            skip_curlys -= 1;
+                            block.push(token);
+                            if skip_curlys == 0 {
+                                break;
+                            }
+                        },
+                        _ => {
+                            block.push(token);
+                        }
+                    }
+                    i += 1;
+                }
+
+                let block = parse(block, debug_mode);
+
+                result.push(Expr::While(Box::new(condition[0].clone()), Box::new(block.clone())));
             },
             Token::Equality => {
                 if tokens.len() < i + 1 {

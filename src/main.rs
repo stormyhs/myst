@@ -1,10 +1,5 @@
 use std::fs;
 use std::env;
-use std::io::Write;
-
-use std::fs::File;
-use std::io::prelude::*;
-
 use std::collections::HashMap;
 
 mod tokenizer;
@@ -19,17 +14,12 @@ fn main() {
     args.remove(0);
 
     let mut debug_mode = false;
-    let mut output_path = "out.rbb";
     let mut source = String::new();
 
     for arg in &args {
         match arg.as_str() {
             "--debug" | "-d" => {
                 debug_mode = true;
-            },
-
-            "--output" | "-o" => {
-                output_path = arg;
             },
 
             _ => {
@@ -55,7 +45,8 @@ fn main() {
 
     let parsed = parser::parse(tokens, debug_mode);
     if debug_mode {
-        println!("AST: {:?}", parsed);
+        println!("AST:");
+        println!("{:#?}", parsed);
     }
 
     let result = engine::evaluate(parsed, &mut HashMap::new(), debug_mode);

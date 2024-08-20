@@ -1,3 +1,6 @@
+// This file is a lot more than just tokens.
+// Surely, one day, I will reorganize this file. :clueless:
+
 #[derive(Debug, Clone)]
 pub enum Operator {
     Add, Subtract, Multiply, Divide,
@@ -11,6 +14,7 @@ pub enum Expr {
     If(Box<Expr>, Box<Vec<Expr>>),
     Else(Box<Expr>, Box<Vec<Expr>>),
     While(Box<Expr>, Box<Vec<Expr>>),
+    Block(Box<Vec<Expr>>),
     Number(i64),
     String(String),
     Identifier(String),
