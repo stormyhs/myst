@@ -7,8 +7,6 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
     let mut declaring_variable = false;
 
     while i < tokens.len() {
-        // NOTE: The `Plus` match is the only one right now that works as intended. I will continue
-        // to work on that one specifically, then move on to the others when the logic has been figured out.
         match &tokens[i] {
             Token::Number(n) => {
                 // If the last token was a number, append this number to the last number.
