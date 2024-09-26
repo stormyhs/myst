@@ -52,3 +52,18 @@ while count < max {
     }
     count = count + 1;
 }
+
+
+// Functions
+func add(a, b) {
+
+    // Even nested functions
+    func print_result(result) {
+        println(a, " + ", b, " = ", a + b);
+    }
+
+    let result = a + b;
+    print_result(result);
+}
+
+add(2, 3);

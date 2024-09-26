@@ -9,21 +9,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
     while i < tokens.len() {
         match &tokens[i] {
             Token::Number(n) => {
-                // If the last token was a number, append this number to the last number.
-                if result.len() > 0 {
-                    let last = result.pop().unwrap();
-                    match last {
-                        Expr::Number(last_n) => {
-                            result.push(Expr::Number(last_n * 10 + n));
-                        },
-                        _ => {
-                            result.push(last);
-                            result.push(Expr::Number(*n));
-                        }
-                    }
-                } else {
-                    result.push(Expr::Number(*n));
-                }
+                result.push(Expr::Number(*n))
             },
             Token::Plus => {
                 if tokens.len() < i + 1 {
@@ -122,20 +108,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                 }
             },
             Token::String(c) => {
-                if result.len() > 0 {
-                    let last = result.pop().unwrap();
-                    match last {
-                        Expr::String(s) => {
-                            result.push(Expr::String(s + c));
-                        },
-                        _ => {
-                            result.push(last);
-                            result.push(Expr::String(c.to_string()));
-                        }
-                    }
-                } else {
-                    result.push(Expr::String(c.to_string()));
-                }
+                result.push(Expr::String(c.to_string()))
             },
             Token::Identifier(s) => {
                 result.push(Expr::Identifier(s.to_string()));
@@ -153,7 +126,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                 let last = result.pop().unwrap();
                 match last {
                     Expr::Identifier(n) => {
-                        result.push(Expr::Function(n.to_string()));
+                        result.push(Expr::Call(n.to_string(), Box::new(Vec::new())));
                     },
                     _ => {
                         result.push(last);
@@ -161,12 +134,9 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                 }
             }
             Token::RParen => {
-                // Get every previous token up until `LParen`, find identifier that comes before
-                // them, and convert it into a Function call.
-
-                let mut args: Vec<Expr> = Vec::new();
                 let mut created_call = false;
 
+                let mut args: Vec<Expr> = Vec::new();
                 loop {
                     let arg = match result.pop() {
                         Some(token) => token,
@@ -174,8 +144,12 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     };
 
                     match arg {
-                        Expr::Function(n) => {
-                            result.push(Expr::Call(n.to_string(), Box::new(args)));
+                        Expr::Call(n, _) => {
+                            result.push(
+                                Expr::Call(n.to_string(),
+                                    Box::new(args.clone())
+                                )
+                            );
                             created_call = true;
                             break;
                         },
@@ -184,7 +158,6 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                         }
                     }
                 }
-
 
                 if !created_call {
                     panic!("Could not correctly parse function call and arguments");
@@ -224,7 +197,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 result.push(Expr::BinOp(Operator::Greater, Box::new(left), Box::new(right)));
             },
-            Token::If(c, t) => {
+            Token::If => {
                 let mut condition: Vec<Token> = Vec::new();
 
                 loop {
@@ -276,7 +249,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 result.push(Expr::If(Box::new(condition[0].clone()), Box::new(block.clone())));
             },
-            Token::Else(c, t) => {
+            Token::Else => {
                 let mut block: Vec<Token> = Vec::new();
                 let mut skip_curlys = 0;
 
@@ -315,7 +288,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                 result.push(if_statement.clone());
                 result.push(Expr::Else(condition.clone(), Box::new(block.clone())));
             },
-            Token::While(c, b) => {
+            Token::While => {
                 let mut condition: Vec<Token> = Vec::new();
 
                 loop {
@@ -369,6 +342,91 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 result.push(Expr::While(Box::new(condition[0].clone()), Box::new(block.clone())));
             },
+            Token::Func => {
+                let name = match &tokens[i + 1] {
+                    Token::Identifier(name) => name,
+                    _ => panic!("Expected function name after func keyword")
+                };
+
+                // Move to the start of the list of arguments
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::LParen => {
+                            break;
+                        },
+                        _ => { }
+                    }
+                }
+
+                // Collect the arguments
+                let mut args: Vec<Token> = Vec::new();
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::RParen => {
+                            break;
+                        },
+                        _ => args.push(token)
+                    }
+                }
+
+                // Move to the start of the block
+                let mut block: Vec<Token> = Vec::new();
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::LCurly => {
+                            break;
+                        },
+                        _ => { }
+                    }
+                }
+
+                // Collect the block
+                let mut ignore_rcurlys = 0;
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::RCurly => {
+                            if ignore_rcurlys > 0 {
+                                ignore_rcurlys -= 1;
+                                block.push(token);
+                                continue;
+                            }
+                            break;
+                        },
+                        Token::LCurly => {
+                            ignore_rcurlys += 1;
+                            block.push(token);
+                        },
+                        _ => {
+                            block.push(token);
+                        }
+                    }
+                }
+
+                let block = parse(block, debug_mode);
+                let args = parse(args, debug_mode);
+
+                result.push(Expr::Func(name.to_string(), Box::new(args), Box::new(block.clone())));
+            },
             Token::Equality => {
                 if tokens.len() < i + 1 {
                     panic!("Expected number after operator");
@@ -387,7 +445,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
             },
             _ => {
                 if debug_mode {
-                    println!("Ignoring token: {:?}", tokens[i]);
+                    //println!("Ignoring token: {:?}", tokens[i]);
                 }
             }
         }

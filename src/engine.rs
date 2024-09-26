@@ -178,6 +178,8 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                 }
             },
             Expr::Call(function, args) => {
+                let mut args = args.clone();
+                args.reverse();
                 if function == "print" {
                     let mut i = 0;
                     while i < args.len() {
@@ -197,6 +199,9 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                 }
                 else if function == "println" {
                     let mut i = 0;
+                    if args.len() == 0 {
+                        println!();
+                    }
                     while i < args.len() {
                         let value = evaluate(vec![args[i].clone()], state, debug_mode);
                         let value = &value[0];
@@ -212,7 +217,26 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                         i += 1;
                     }
                     println!();
-                } else {
+                }
+                else if state.contains_key(function) {
+                    let function = state[function].clone();
+                    match function {
+                        Expr::Func(name, arg_names, block) => {
+                            let mut new_state = state.clone();
+                            for i in 0..args.len() {
+                                let name = match &arg_names[i] {
+                                    Expr::Identifier(n) => n,
+                                    _ => { panic!("Invalid argument name"); }
+                                };
+
+                                new_state.insert(name.to_string(), args[i].clone());
+                            }
+                            result.extend(evaluate(*block, &mut new_state, debug_mode));
+                        },
+                        _ => { panic!("Invalid function call: {:?}", function); }
+                    }
+                }
+                else {
                     panic!("Unknown function: {}", function);
                 }
             },
@@ -260,6 +284,9 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                     }
                 }
             },
+            Expr::Func(name, args, block) => {
+                state.insert(name.to_string(), Expr::Func(name.to_string(), args.clone(), block.clone()));
+            }
             _ => {}
         }
 

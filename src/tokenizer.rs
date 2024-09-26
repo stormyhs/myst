@@ -19,6 +19,10 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 let last = tokens.pop().unwrap_or(Token::String(String::new()));
                 
                 match last {
+                    Token::Comma => {
+                        tokens.push(last);
+                        tokens.push(Token::String(c.to_string()));
+                    },
                     Token::String(s) => {
                         tokens.push(Token::String(s + &c.to_string()));
                     },
@@ -126,6 +130,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 '}' => tokens.push(Token::RCurly),
                 '>' => tokens.push(Token::RArrow),
                 '<' => tokens.push(Token::LArrow),
+                ',' => tokens.push(Token::Comma),
                 ' ' => {
                     if tokens.len() == 0 {
                         continue;
@@ -137,11 +142,13 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                             if s == "let" {
                                 tokens.push(Token::Let);
                             } else if s == "if" {
-                                tokens.push(Token::If(Box::new(Expr::Number(0)), Vec::new()));
+                                tokens.push(Token::If);
                             } else if s == "else" {
-                                tokens.push(Token::Else(Box::new(Expr::Number(0)), Vec::new()));
+                                tokens.push(Token::Else);
                             } else if s == "while" {
-                                tokens.push(Token::While(Box::new(Expr::Number(0)), Vec::new()));
+                                tokens.push(Token::While);
+                            } else if s == "func" {
+                                tokens.push(Token::Func);
                             } else {
                                 tokens.push(Token::Identifier(s));
                             }
@@ -164,7 +171,8 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                                 tokens.push(Token::String(c.to_string()));
                             }
                         }
-                    } else {
+                    }
+                    else {
                         if tokens.len() == 0 {
                             tokens.push(Token::Identifier(c.to_string()));
                             continue;

@@ -10,17 +10,17 @@ pub enum Operator {
 
 #[derive(Debug, Clone)]
 pub enum Expr {
-    Let,
+    Number(i64),
+    String(String),
+    BinOp(Operator, Box<Expr>, Box<Expr>),
+
     If(Box<Expr>, Box<Vec<Expr>>),
     Else(Box<Expr>, Box<Vec<Expr>>),
     While(Box<Expr>, Box<Vec<Expr>>),
-    Block(Box<Vec<Expr>>),
-    Number(i64),
-    String(String),
+
     Identifier(String),
-    Function(String),
+    Func(String, Box<Vec<Expr>>, Box<Vec<Expr>>),
     Call(String, Box<Vec<Expr>>),
-    BinOp(Operator, Box<Expr>, Box<Expr>),
 }
 
 #[derive(Debug, Clone)]
@@ -28,10 +28,10 @@ pub enum Token {
     LParen, RParen,
     LCurly, RCurly,
     LArrow, RArrow,
-    DoubleQuote,
     Plus, Minus, Star, Slash,
     Equal, Equality,
     Semicolon,
+    Comma,
     Identifier(String),
     Declaration(String, Box<Expr>),
     Assignment(String, Box<Expr>),
@@ -39,8 +39,9 @@ pub enum Token {
 
     // Keywords
     Let,
-    If(Box<Expr>, Vec<Expr>),
-    Else(Box<Expr>, Vec<Expr>),
-    While(Box<Expr>, Vec<Expr>),
+    If,
+    Else,
+    While,
+    Func,
 }
 

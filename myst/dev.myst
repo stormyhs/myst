@@ -1,25 +1,17 @@
-// Nesting tests
 
-if 0 {
-    println("If block");
-} else {
-    println("Else block");
 
-    if 1 == 1 {
-        println("cabbage is good");
+func add() {
+    println("entry");
 
-        let c = 1;
-        let max = 10;
-        while c < max {
-            if c < 6 {
-                println(c);
-            }
-            c = c + 1;
-        }
-
-    } else {
-        println("poop");
+    func trolling() {
+        println("executing from nested func");
     }
 
+    trolling();
+
+    println("exit");
 }
+
+add();
+
 
