@@ -6,14 +6,14 @@ while count < 5 {
 
 let result = count;
 
-for i of [1, 1, 1, 1, 1] {
+for i of [2, 2, 2, 2, 2] {
     result = result + i;
 }
 
 let array = [1, 1, 1, 1, 1];
 
 for i of array {
-    result = result + i;
+    result = result - i;
 }
 
 result;

@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::io::Read;
-use crate::tokens::*;
 
+use ureq;
+
+use crate::tokens::*;
 use crate::tokenizer::tokenize;
 use crate::parser::parse;
 
@@ -122,6 +124,28 @@ fn access_property(expr: &Expr, prop: &str, state: &HashMap<String, Expr>) -> Ex
             }
         },
         _ => { panic!("{:?} has no property {:?}", expr, prop); }
+    }
+}
+
+fn builtin_http_get(url: &str) -> Expr {
+    let response = ureq::get(url).call();
+    
+    match response {
+        Ok(response) => {
+            let status = response.status();
+            let text = response.into_string().unwrap();
+
+            return Expr::Array(Box::new(vec![
+                Expr::Number(status as i64),
+                Expr::String(text)
+            ]));
+        },
+        Err(e) => {
+            return Expr::Array(Box::new(vec![
+                Expr::Number(0),
+                Expr::String(e.to_string())
+            ]));
+        }
     }
 }
 
@@ -397,6 +421,14 @@ pub fn evaluate(expr: &mut Vec<Expr>, state: &mut HashMap<String, Expr>, debug_m
                 }
                 else if function_name == "println" {
                     builtin_println(evaluated_args);
+                }
+                else if function_name == "http_get" {
+                    let url = match &evaluated_args[0] {
+                        Expr::String(s) => s,
+                        _ => { panic!("Invalid argument for http_get"); }
+                    };
+
+                    result.push(builtin_http_get(url));
                 }
                 else if state.contains_key(&function_name) {
                     let function = state[&function_name].clone();

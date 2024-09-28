@@ -1,6 +1,7 @@
 use std::fs;
 use std::env;
 use std::collections::HashMap;
+use std::io::Write;
 
 use colored::*;
 
@@ -35,15 +36,18 @@ fn run_file(path: &str, debug_mode: bool) -> Vec<tokens::Expr> {
 }
 
 fn run_test(path: &str, expect: tokens::Expr) -> bool {
+    print!("{}: ", path);
+    std::io::stdout().flush().unwrap();
+
     let result = run_file(path, false);
     if result.len() != 1 || result[0] != expect {
-        print!("{}: {}  ", "Test failed".red(), path);
+        print!("{}  ", "failed".red());
         print!("{}: {:?}  ", "Expected".yellow(), expect);
         println!("{}: {:?}  ", "Got".yellow(), result);
 
         return false;
     } else {
-        println!("{}: {}", "Test passed".green(), path);
+        println!("{}", "passed".green());
         return true;
     }
 }
@@ -83,12 +87,14 @@ fn main() {
 
         let mut tests: Vec<bool> = Vec::new();
 
-        tests.push(run_test("./tests/vars.myst", tokens::Expr::Number(100050)));
-        tests.push(run_test("./tests/conditions.myst", tokens::Expr::Number(75)));
-        tests.push(run_test("./tests/loops.myst", tokens::Expr::Number(15)));
-        tests.push(run_test("./tests/funcs.myst", tokens::Expr::Number(5)));
-        tests.push(run_test("./tests/nesting.myst", tokens::Expr::Number(10)));
-        tests.push(run_test("./tests/arrays.myst", tokens::Expr::Number(490)));
+        let expect = tokens::Expr::Number(10);
+
+        tests.push(run_test("./tests/variables.myst", expect.clone()));
+        tests.push(run_test("./tests/numbers.myst", expect.clone()));
+        tests.push(run_test("./tests/loops.myst", expect.clone()));
+        tests.push(run_test("./tests/functions.myst", expect.clone()));
+        tests.push(run_test("./tests/conditions.myst", expect.clone()));
+        tests.push(run_test("./tests/arrays.myst", expect.clone()));
 
         let mut passed = 0;
         for test in &tests {
@@ -97,12 +103,14 @@ fn main() {
             }
         }
 
+        println!();
         let text = format!("{} out of {} passed", passed, tests.len());
         if passed == tests.len() {
             println!("{}", text.green());
         } else {
             println!("{}", text.red());
         }
+        println!();
 
         return;
     } else {

@@ -1,7 +1,0 @@
-func add(a, b) {
-    let result = a + b;
-
-    result;
-}
-
-add(2, 3);
