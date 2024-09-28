@@ -79,3 +79,13 @@ func hi() {
 }
 array = [hi];
 array[0]();
+
+
+
+// Built-in properties
+let str = "hello".uppercase;
+println(str);
+
+// Strings: `length`, `uppercase`, `lowercase`, `reverse`, `trim`
+// Numbers: `to_string`
+// Arrays:  `length`
