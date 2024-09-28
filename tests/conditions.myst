@@ -1,0 +1,18 @@
+let result = 0;
+
+let condition = 1;
+if condition {
+    result = result + 50;
+} else {
+    println("huh");
+}
+
+
+condition = 0;
+if condition {
+    println("huh");
+} else {
+    result = result + 25;
+}
+
+result;

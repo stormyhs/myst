@@ -1,14 +1,14 @@
 // This file is a lot more than just tokens.
 // Surely, one day, I will reorganize this file. :clueless:
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Operator {
     Add, Subtract, Multiply, Divide,
     Equality, Lesser, Greater,
     Declare, Assign
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Number(i64),
     String(String),

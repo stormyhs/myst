@@ -2,18 +2,58 @@ use std::fs;
 use std::env;
 use std::collections::HashMap;
 
+use colored::*;
+
 mod tokenizer;
 mod parser;
 mod tokens;
 mod engine;
 
-fn main() {
+fn run_file(path: &str, debug_mode: bool) -> Vec<tokens::Expr> {
     let start_time = std::time::Instant::now();
 
+    let mut source = fs::read_to_string(path).unwrap();
+
+    let tokens = tokenizer::tokenize(source, debug_mode);
+    if debug_mode {
+        println!("Tokens: {:?}", tokens);
+    }
+
+    let mut parsed = parser::parse(tokens, debug_mode);
+    if debug_mode {
+        println!("AST:");
+        println!("{:#?}", parsed);
+    }
+
+    let result = engine::evaluate(&mut parsed, &mut HashMap::new(), debug_mode);
+    if debug_mode {
+        println!("Program evaluated to: {:?}", result);
+        println!("Execution took {:.6}s", start_time.elapsed().as_secs_f32());
+    }
+
+    return result;
+}
+
+fn run_test(path: &str, expect: tokens::Expr) -> bool {
+    let result = run_file(path, false);
+    if result.len() != 1 || result[0] != expect {
+        print!("{}: {}  ", "Test failed".red(), path);
+        print!("{}: {:?}  ", "Expected".yellow(), expect);
+        println!("{}: {:?}  ", "Got".yellow(), result);
+
+        return false;
+    } else {
+        println!("{}: {}", "Test passed".green(), path);
+        return true;
+    }
+}
+
+fn main() {
     let mut args: Vec<String> = env::args().collect();
     args.remove(0);
 
     let mut debug_mode = false;
+    let mut running_tests = false;
     let mut source = String::new();
 
     for arg in &args {
@@ -21,6 +61,9 @@ fn main() {
             "--debug" | "-d" => {
                 debug_mode = true;
             },
+            "--test" | "-t" => {
+                running_tests = true;
+            }
 
             _ => {
                 if source == "" {
@@ -40,27 +83,35 @@ fn main() {
         return;
     }
 
-    let source = fs::read_to_string(source)
-        .expect("Unable to read source file");
+    if running_tests {
+        println!("\n\nRunning tests...\n");
 
-    let tokens = tokenizer::tokenize(source, debug_mode);
-    if debug_mode {
-        println!("Tokens: {:?}", tokens);
-    }
+        let mut tests: Vec<bool> = Vec::new();
 
-    let mut parsed = parser::parse(tokens, debug_mode);
-    if debug_mode {
-        println!("AST:");
-        println!("{:#?}", parsed);
-    }
+        tests.push(run_test("./tests/vars.myst", tokens::Expr::Number(100050)));
+        tests.push(run_test("./tests/conditions.myst", tokens::Expr::Number(75)));
+        tests.push(run_test("./tests/loops.myst", tokens::Expr::Number(5)));
+        tests.push(run_test("./tests/funcs.myst", tokens::Expr::Number(5)));
+        tests.push(run_test("./tests/nesting.myst", tokens::Expr::Number(10)));
+        tests.push(run_test("./tests/arrays.myst", tokens::Expr::Number(490)));
 
-    let result = engine::evaluate(&mut parsed, &mut HashMap::new(), debug_mode);
-    if debug_mode {
-        println!("Program evaluated to: {:?}", result);
-    }
+        let mut passed = 0;
+        for test in &tests {
+            if *test {
+                passed += 1;
+            }
+        }
 
-    if debug_mode {
-        println!("Execution took {:.6}s", start_time.elapsed().as_secs_f32());
+        let text = format!("{} out of {} passed", passed, tests.len());
+        if passed == tests.len() {
+            println!("{}", text.green());
+        } else {
+            println!("{}", text.red());
+        }
+
+        return;
+    } else {
+        run_file(&source, debug_mode);
     }
 }
 

@@ -1,0 +1,6 @@
+let a = 69;
+
+a = 50;
+let b = 100_000; // We can use `_` to make numbers human readable.
+
+a + b;

@@ -1,0 +1,13 @@
+let max = 10;
+let count = 1;
+
+while count < max {
+    if count > 5000 {
+        println(count);
+    }
+    else {
+        count = count + 1;
+    }
+}
+
+count;

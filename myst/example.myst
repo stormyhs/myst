@@ -81,7 +81,6 @@ array = [hi];
 array[0]();
 
 
-
 // Built-in properties
 let str = "hello".uppercase;
 println(str);

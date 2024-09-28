@@ -22,6 +22,8 @@ Or, if you are running a complied executable directly:
 
 For debug information, use the `--debug` flag.
 
+To run the test suite, use the `--tests` flag, and do not provide a source file destination.
+
 Please note that if you are using cargo to run myst, you need `-- --debug` to pass in arguments to the executable, rather than to cargo.
 
 ---
