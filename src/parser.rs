@@ -32,10 +32,6 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
     let mut declaring_variable = false;
 
     while i < tokens.len() {
-        if debug_mode {
-            println!("Handling token: {:?}", tokens[i]);
-        }
-
         match &tokens[i] {
             Token::Number(n) => {
                 result.push(Expr::Number(*n))
@@ -218,7 +214,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                 let last = result.pop().unwrap();
                 match last {
                     Expr::Identifier(n) => {
-                        result.push(Expr::Call(Box::new(Expr::String(n.to_string())), Box::new(Vec::new())));
+                        result.push(Expr::Call(Box::new(Expr::Identifier(n.to_string())), Box::new(Vec::new())));
                     },
                     _ => {
                         result.push(last);
@@ -483,6 +479,69 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 result.push(Expr::While(Box::new(condition[0].clone()), Box::new(block.clone())));
             },
+            Token::For => {
+                let iterator = match &tokens[i + 1] {
+                    Token::Identifier(s) => s,
+                    _ => panic!("Expected variable after for keyword")
+                };
+
+                let mut is_variable = true;
+                let array = match &tokens[i + 3] {
+                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
+                    Token::LBracket => {
+                        is_variable = false;
+                        parse_array(tokens[i + 2..].to_vec(), debug_mode)[0].clone()
+                    }
+                    _ => panic!("Expected array after variable in for loop")
+                };
+
+                if !is_variable {
+                    loop {
+                        i += 1;
+                        if i >= tokens.len() {
+                            break;
+                        }
+                        match &tokens[i] {
+                            Token::RBracket => {
+                                break;
+                            },
+                            _ => { }
+                        }
+                    }
+                } else {
+                    i += 3;
+                }
+
+                let mut block: Vec<Token> = Vec::new();
+                let mut skip_curlys = 0;
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::LCurly => {
+                            skip_curlys += 1;
+                            block.push(token);
+                        },
+                        Token::RCurly => {
+                            skip_curlys -= 1;
+                            block.push(token);
+                            if skip_curlys == 0 {
+                                break;
+                            }
+                        },
+                        _ => {
+                            block.push(token);
+                        }
+                    }
+                }
+
+                let block = parse(block, debug_mode);
+
+                result.push(Expr::For(iterator.to_string(), Box::new(array), Box::new(block.clone())));
+            }
 
             Token::Func => {
                 let name = match &tokens[i + 1] {

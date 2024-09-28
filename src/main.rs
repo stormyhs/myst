@@ -12,7 +12,7 @@ mod engine;
 fn run_file(path: &str, debug_mode: bool) -> Vec<tokens::Expr> {
     let start_time = std::time::Instant::now();
 
-    let mut source = fs::read_to_string(path).unwrap();
+    let source = fs::read_to_string(path).expect("Could not read source file");
 
     let tokens = tokenizer::tokenize(source, debug_mode);
     if debug_mode {
@@ -78,11 +78,6 @@ fn main() {
         println!("Current directory: {}", current_path.display());
     }
 
-    if source == "" {
-        println!("No source file path provided. Did you mean to use --repl?");
-        return;
-    }
-
     if running_tests {
         println!("\n\nRunning tests...\n");
 
@@ -90,7 +85,7 @@ fn main() {
 
         tests.push(run_test("./tests/vars.myst", tokens::Expr::Number(100050)));
         tests.push(run_test("./tests/conditions.myst", tokens::Expr::Number(75)));
-        tests.push(run_test("./tests/loops.myst", tokens::Expr::Number(5)));
+        tests.push(run_test("./tests/loops.myst", tokens::Expr::Number(15)));
         tests.push(run_test("./tests/funcs.myst", tokens::Expr::Number(5)));
         tests.push(run_test("./tests/nesting.myst", tokens::Expr::Number(10)));
         tests.push(run_test("./tests/arrays.myst", tokens::Expr::Number(490)));
@@ -111,6 +106,11 @@ fn main() {
 
         return;
     } else {
+        if source == "" {
+            println!("No source file path provided. Did you mean to use --repl?");
+            return;
+        }
+
         run_file(&source, debug_mode);
     }
 }

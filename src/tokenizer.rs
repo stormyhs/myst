@@ -7,6 +7,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
 
     let mut in_string = false;
     let mut in_comment = false;
+    let mut declaring_for = false;
 
     for line in lines {
         in_comment = false;
@@ -126,7 +127,12 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 ')' => tokens.push(Token::RParen),
                 '"' => in_string = !in_string,
                 ';' => tokens.push(Token::Semicolon),
-                '{' => tokens.push(Token::LCurly),
+                '{' => {
+                    tokens.push(Token::LCurly);
+                    if declaring_for {
+                        declaring_for = false;
+                    }
+                },
                 '}' => tokens.push(Token::RCurly),
                 '>' => tokens.push(Token::RArrow),
                 '<' => tokens.push(Token::LArrow),
@@ -154,6 +160,13 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                             else if s == "while" {
                                 tokens.push(Token::While);
                             }
+                            else if s == "for" {
+                                tokens.push(Token::For);
+                                declaring_for = true;
+                            }
+                            else if s == "of" {
+                                tokens.push(Token::Of);
+                            }
                             else if s == "func" {
                                 tokens.push(Token::Func);
                             }
@@ -164,7 +177,11 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                                 tokens.push(Token::Include);
                             }
                             else {
-                                tokens.push(Token::Identifier(s));
+                                tokens.push(Token::Identifier(s.clone()));
+                                if declaring_for {
+                                    tokens.push(Token::Identifier("".to_string()));
+                                    declaring_for = false;
+                                }
                             }
                         },
                         _ => {
@@ -195,11 +212,11 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                         let last = tokens.pop().unwrap();
                         match last {
                             Token::Identifier(name) => {
-                                if c.is_alphabetic() {
-                                    tokens.push(Token::Identifier(name + &c.to_string()));
-                                } else {
+                                if !c.is_alphabetic() {
                                     panic!("Identifier must be alphanumeric: {name}{c}");
                                 }
+
+                                tokens.push(Token::Identifier(name + &c.to_string()));
                             },
                             Token::Equal => {
                                 tokens.push(last);

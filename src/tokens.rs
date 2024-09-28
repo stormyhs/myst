@@ -22,7 +22,7 @@ pub enum Expr {
     While(Box<Expr>, Box<Vec<Expr>>),
 
     // for item of array { ... }
-    For(String, Box<Expr>),
+    For(String, Box<Expr>, Box<Vec<Expr>>),
 
     Identifier(String),
 
@@ -58,6 +58,7 @@ pub enum Token {
     Else,
     While,
     For,
+    Of,
     Func,
     Import,
     Include,

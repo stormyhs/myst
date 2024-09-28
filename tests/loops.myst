@@ -1,7 +1,19 @@
 let max = 5;
-let count = 0;
+let count = 1;
 while count < 5 {
     count = count + 1;
 }
 
-count;
+let result = count;
+
+for i of [1, 1, 1, 1, 1] {
+    result = result + i;
+}
+
+let array = [1, 1, 1, 1, 1];
+
+for i of array {
+    result = result + i;
+}
+
+result;

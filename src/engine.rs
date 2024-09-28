@@ -27,7 +27,7 @@ fn builtin_println(args: Vec<Expr>) -> Expr {
                 }
                 print!("]");
             }
-            _ => { panic!("Invalid argument to println: {:?}", arg); }
+            _ => { println!("{:?} ", arg); }
         }
     }
 
@@ -58,7 +58,7 @@ fn builtin_print(args: Vec<Expr>) -> Expr {
                 }
                 print!("]");
             }
-            _ => { panic!("Invalid argument to print: {:?}", arg); }
+            _ => { println!("{:?} ", arg); }
         }
     }
 
@@ -463,6 +463,22 @@ pub fn evaluate(expr: &mut Vec<Expr>, state: &mut HashMap<String, Expr>, debug_m
                         _ => { panic!("Invalid condition in while statement"); }
                     }
                 }
+            },
+            Expr::For(item, array, block) => {
+                let array = evaluate(&mut vec![*array.clone()], state, debug_mode);
+                let array = &array[0];
+
+                match array {
+                    Expr::Array(arr) => {
+                        for value in arr.iter() {
+                            state.insert(item.to_string(), value.clone());
+                            result.extend(evaluate(&mut *block.clone(), state, debug_mode));
+                            state.remove(item);
+                        }
+                    },
+                    _ => { panic!("For loops can only iterate over arrays"); }
+                }
+
             },
             Expr::Func(name, args, block) => {
                 state.insert(name.to_string(), Expr::Func(name.to_string(), args.clone(), block.clone()));
