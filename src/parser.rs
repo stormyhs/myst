@@ -211,16 +211,30 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
             },
 
             Token::LParen => {
-                let last = result.pop().unwrap();
-                match last {
-                    Expr::Identifier(n) => {
-                        result.push(Expr::Call(Box::new(Expr::Identifier(n.to_string())), Box::new(Vec::new())));
-                    },
-                    _ => {
-                        result.push(last);
+                let name = result.pop().expect("Expected function name before LParen");
+
+                let mut args: Vec<Token> = Vec::new();
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::RParen => {
+                            break;
+                        },
+                        _ => {
+                            args.push(token)
+                        }
                     }
                 }
+
+                let parsed_args = parse(args, debug_mode);
+
+                result.push(Expr::Call(Box::new(name), Box::new(parsed_args)));
             }
+
             Token::RParen => {
                 let mut created_call = false;
 
@@ -256,6 +270,8 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                                 },
                                 _ => { }
                             }
+                            created_call = true;
+                            break;
                         },
                         _ => { args.push(arg); }
                     }
