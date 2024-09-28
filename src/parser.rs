@@ -1,5 +1,30 @@
 use crate::tokens::{Token, Expr, Operator};
 
+fn parse_array(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
+    let mut array: Vec<Token> = Vec::new();
+    
+    let mut i = 0;
+    loop {
+        i += 1;
+        if i >= tokens.len() {
+            break;
+        }
+        let token = tokens[i].clone();
+        match token {
+            Token::RBracket => {
+                break;
+            },
+            _ => {
+                array.push(token);
+            }
+        }
+    }
+
+    let parsed_array = parse(array, debug_mode);
+
+    return parsed_array;
+}
+
 pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
     let mut i = 0;
     let mut result: Vec<Expr> = Vec::new();
@@ -7,6 +32,10 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
     let mut declaring_variable = false;
 
     while i < tokens.len() {
+        if debug_mode {
+            println!("Handling token: {:?}", tokens[i]);
+        }
+
         match &tokens[i] {
             Token::Number(n) => {
                 result.push(Expr::Number(*n))
@@ -20,7 +49,11 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                 let right = match &tokens[i + 1] {
                     Token::Number(n) => Expr::Number(*n),
                     Token::Identifier(s) => Expr::Identifier(s.to_string()),
-                    _ => panic!("Expected value or variable before operator")
+                    Token::String(c) => Expr::String(c.to_string()),
+                    Token::LBracket => {
+                        parse_array(tokens[i + 1..].to_vec(), debug_mode)[0].clone()
+                    },
+                    _ => panic!("Expected value or variable before operator, got {:?}", tokens[i + 1])
                 };
 
                 i += 1;
@@ -107,26 +140,85 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     result.push(Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(left)), Box::new(right[0].clone())));
                 }
             },
+
             Token::String(c) => {
                 result.push(Expr::String(c.to_string()))
             },
             Token::Identifier(s) => {
+                let next = tokens.get(i + 1);
+                match next {
+                    Some(Token::LBracket) => {
+                        let index = match tokens.get(i + 2) {
+                            Some(Token::Number(n)) => n.to_string(),
+                            Some(Token::Identifier(s)) => s.to_string(),
+                            _ => panic!("Expected number after bracket")
+                        };
+
+                        result.push(Expr::AccessProperty(Box::new(Expr::Identifier(s.to_string())), index));
+                        i += 3;
+
+                        continue;
+                    },
+                    _ => { }
+                }
+
                 result.push(Expr::Identifier(s.to_string()));
             },
+
             Token::Declaration(s, e) => {
                 result.push(Expr::BinOp(Operator::Declare, Box::new(Expr::Identifier(s.to_string())), e.clone()));
             },
             Token::Assignment(s, e) => {
                 result.push(Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(s.to_string())), e.clone()));
             },
+
             Token::Let => {
                 declaring_variable = true;
             }
+            Token::Import => {
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::Semicolon => {
+                            break;
+                        },
+                        Token::Identifier(name) => {
+                            result.push(Expr::Import(name.to_string()));
+                            break;
+                        }
+                        _ => { }
+                    }
+                }
+            },
+            Token::Include => {
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::Semicolon => {
+                            break;
+                        },
+                        Token::Identifier(name) => {
+                            result.push(Expr::Include(name.to_string()));
+                            break;
+                        }
+                        _ => { }
+                    }
+                }
+            },
+
             Token::LParen => {
                 let last = result.pop().unwrap();
                 match last {
                     Expr::Identifier(n) => {
-                        result.push(Expr::Call(n.to_string(), Box::new(Vec::new())));
+                        result.push(Expr::Call(Box::new(Expr::String(n.to_string())), Box::new(Vec::new())));
                     },
                     _ => {
                         result.push(last);
@@ -145,17 +237,31 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                     match arg {
                         Expr::Call(n, _) => {
+                            args.reverse();
                             result.push(
-                                Expr::Call(n.to_string(),
+                                Expr::Call(
+                                    n,
                                     Box::new(args.clone())
                                 )
                             );
                             created_call = true;
                             break;
                         },
-                        _ => {
-                            args.push(arg.clone());
-                        }
+                        Expr::AccessProperty(expr, prop) => {
+                            match *expr {
+                                Expr::Identifier(name) => {
+                                    args.reverse();
+                                    result.push(
+                                        Expr::Call(
+                                            Box::new(Expr::AccessProperty(Box::new(Expr::Identifier(name.to_string())), prop)),
+                                            Box::new(args.clone())
+                                        )
+                                    );
+                                },
+                                _ => { }
+                            }
+                        },
+                        _ => { args.push(arg); }
                     }
                 }
 
@@ -163,8 +269,6 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                     panic!("Could not correctly parse function call and arguments");
                 }
             }
-            Token::LCurly => { },
-            Token::RCurly => { },
             Token::LArrow => {
                 if tokens.len() < i + 1 {
                     panic!("Expected number after operator");
@@ -197,6 +301,43 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 result.push(Expr::BinOp(Operator::Greater, Box::new(left), Box::new(right)));
             },
+            Token::LBracket => {
+                let mut array: Vec<Token> = Vec::new();
+
+                loop {
+                    i += 1;
+                    if i >= tokens.len() {
+                        break;
+                    }
+                    let token = tokens[i].clone();
+                    match token {
+                        Token::RBracket => {
+                            break;
+                        },
+                        _ => {
+                            array.push(token);
+                        }
+                    }
+                }
+
+                let parsed_array = parse(array, debug_mode);
+
+                result.push(Expr::Array(Box::new(parsed_array)));
+            },
+            Token::RBracket => { },
+
+            Token::Dot => {
+                let last = result.pop().expect("Expected value or variable before operator");
+                let property = match &tokens[i + 1] {
+                    Token::Identifier(s) => s,
+                    _ => panic!("Expected property after dot operator")
+                };
+
+                i += 1;
+
+                result.push(Expr::AccessProperty(Box::new(last), property.to_string()));
+            },
+
             Token::If => {
                 let mut condition: Vec<Token> = Vec::new();
 
@@ -342,6 +483,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 result.push(Expr::While(Box::new(condition[0].clone()), Box::new(block.clone())));
             },
+
             Token::Func => {
                 let name = match &tokens[i + 1] {
                     Token::Identifier(name) => name,
@@ -427,6 +569,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 result.push(Expr::Func(name.to_string(), Box::new(args), Box::new(block.clone())));
             },
+
             Token::Equality => {
                 if tokens.len() < i + 1 {
                     panic!("Expected number after operator");
@@ -443,9 +586,15 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
 
                 result.push(Expr::BinOp(Operator::Equality, Box::new(left), Box::new(right)));
             },
+
+            Token::LCurly => { },
+            Token::RCurly => { },
+            Token::Semicolon => { },
+            Token::Comma => { },
+
             _ => {
                 if debug_mode {
-                    //println!("Ignoring token: {:?}", tokens[i]);
+                    println!("Unhandled token: {:?}", tokens[i]);
                 }
             }
         }

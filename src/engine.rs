@@ -1,7 +1,131 @@
 use std::collections::HashMap;
-use crate::tokens::{Expr, Operator};
+use std::io::Read;
+use crate::tokens::*;
 
-pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: bool) -> Vec<Expr> {
+use crate::tokenizer::tokenize;
+use crate::parser::parse;
+
+fn builtin_println(args: Vec<Expr>) -> Expr {
+    for arg in args {
+        match arg {
+            Expr::String(s) => {
+                print!("{}", s);
+            },
+            Expr::Number(n) => {
+                print!("{}", n);
+            },
+            Expr::Array(arr) => {
+                print!("[");
+                let length = arr.len();
+                let mut i = 0;
+                for item in arr.iter() {
+                    builtin_print(vec![item.clone()]);
+                    if i < length - 1 {
+                        print!(", ");
+                    }
+                    i += 1;
+                }
+                print!("]");
+            }
+            _ => { panic!("Invalid argument to println: {:?}", arg); }
+        }
+    }
+
+    println!();
+
+    return Expr::Number(0);
+}
+
+fn builtin_print(args: Vec<Expr>) -> Expr {
+    for arg in args {
+        match arg {
+            Expr::String(s) => {
+                print!("{}", s);
+            },
+            Expr::Number(n) => {
+                print!("{}", n);
+            },
+            Expr::Array(arr) => {
+                print!("[");
+                let length = arr.len();
+                let mut i = 0;
+                for item in arr.iter() {
+                    builtin_print(vec![item.clone()]);
+                    if i < length - 1 {
+                        print!(", ");
+                    }
+                    i += 1;
+                }
+                print!("]");
+            }
+            _ => { panic!("Invalid argument to print: {:?}", arg); }
+        }
+    }
+
+    return Expr::Number(0);
+}
+
+fn access_property(expr: &Expr, prop: &str, state: &HashMap<String, Expr>) -> Expr {
+    match expr {
+        Expr::String(s) => {
+            match prop {
+                "length" => {
+                    return Expr::Number(s.len() as i64);
+                },
+                "uppercase" => {
+                    return Expr::String(s.to_uppercase());
+                },
+                "lowercase" => {
+                    return Expr::String(s.to_lowercase());
+                },
+                "reverse" => {
+                    return Expr::String(s.chars().rev().collect());
+                },
+                "trim" => {
+                    return Expr::String(s.trim().to_string());
+                },
+                _ => { panic!("Type String has no property {:?}", prop); }
+            }
+        },
+        Expr::Number(n) => {
+            match prop {
+                "to_string" => {
+                    return Expr::String(n.to_string());
+                },
+                _ => { panic!("Type Number has no property {:?}", prop); }
+            }
+        },
+        Expr::Array(arr) => {
+            match prop {
+                "length" => {
+                    return Expr::Number(arr.len() as i64);
+                },
+                _ => {
+                    if let Ok(index) = prop.parse::<usize>() {
+                        if index < arr.len() {
+                            return arr[index].clone();
+                        } else {
+                            panic!("Index out of bounds: {}", index);
+                        }
+                    } else {
+                        panic!("Type Array has no property {:?}", prop);
+                    }
+                }
+            }
+        },
+        Expr::Identifier(name) => {
+            if state.contains_key(name) {
+                let value = state[name].clone();
+                return access_property(&value, prop, state);
+            } else {
+                panic!("Variable not found: {}", name);
+            }
+        },
+        _ => { panic!("{:?} has no property {:?}", expr, prop); }
+    }
+}
+
+pub fn evaluate(expr: &mut Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: bool) -> Vec<Expr> {
     let mut result: Vec<Expr> = Vec::new();
 
     let mut i = 0;
@@ -20,11 +144,11 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                         vec![*left.clone()]
                     },
                     _ => {
-                        evaluate(vec![*left.clone()], state, debug_mode)
+                        evaluate(&mut vec![*left.clone()], state, debug_mode)
                     }
                 };
 
-                let right = evaluate(vec![*right.clone()], state, debug_mode);
+                let right = evaluate(&mut vec![*right.clone()], state, debug_mode);
 
                 match (&left[0], &right[0]) {
                     (Expr::Number(l), Expr::Number(r)) => {
@@ -60,6 +184,20 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                             _ => { panic!("Invalid operator for two number values: {:?}", op) }
                         }
                     },
+                    (Expr::String(l), Expr::String(r)) => {
+                        result.push(Expr::String(format!("{}{}", l, r)));
+                        did_operate = true;
+                    },
+                    (Expr::String(l), Expr::Number(r)) => {
+                        match *op {
+                            Operator::Multiply => {
+                                result.push(Expr::String(l.repeat(*r as usize)));
+                                did_operate = true;
+                            },
+                            _ => { panic!("Invalid operator for string and number: {:?}", op); }
+                        }
+                    },
+
                     (Expr::Identifier(l), Expr::Number(n)) => {
                         match *op {
                             Operator::Declare => {
@@ -156,6 +294,48 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
                             _ => { panic!("Invalid operator on variable and string: {:?}", op); }
                         }
                     }
+                    (Expr::Identifier(l), Expr::Array(arr)) => {
+                        match *op {
+                            Operator::Declare => {
+                                if state.contains_key(&format!("{}", l)) {
+                                    panic!("Cannot redeclare variable: {}", l);
+                                }
+
+                                state.insert(format!("{}", l), Expr::Array(arr.clone()));
+                                did_operate = true;
+                            },
+                            Operator::Assign => {
+                                if !state.contains_key(&format!("{}", l)) {
+                                    panic!("Cannot assign to undeclared variable: {}", l);
+                                }
+
+                                state.insert(format!("{}", l), Expr::Array(arr.clone()));
+                                did_operate = true;
+                            }
+                            _ => { panic!("Invalid operator on variable and array: {:?}", op); }
+                        }
+                    }
+                    (Expr::Identifier(l), Expr::Func(name, args, block)) => {
+                        match *op {
+                            Operator::Declare => {
+                                if state.contains_key(&format!("{}", l)) {
+                                    panic!("Cannot redeclare variable: {}", l);
+                                }
+
+                                state.insert(format!("{}", l), Expr::Func(name.to_string(), args.clone(), block.clone()));
+                                did_operate = true;
+                            },
+                            Operator::Assign => {
+                                if !state.contains_key(&format!("{}", l)) {
+                                    panic!("Cannot assign to undeclared variable: {}", l);
+                                }
+
+                                state.insert(format!("{}", l), Expr::Func(name.to_string(), args.clone(), block.clone()));
+                                did_operate = true;
+                            }
+                            _ => { panic!("Invalid operator on variable and function: {:?}", op); }
+                        }
+                    },
                     _ => { }
                 }
 
@@ -171,57 +351,57 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
             },
             Expr::Identifier(s) => {
                 if state.contains_key(s) {
-                    result.push(state[s].clone());
+                    let value = state[s].clone();
+                    match value {
+                        Expr::Identifier(value) => {
+                            if state.contains_key(&value) {
+                                result.push(state[&value].clone());
+                            } else {
+                                result.push(Expr::Identifier(value));
+                            }
+                        },
+                        _ => {
+                            result.push(value);
+                        }
+                    }
                 } else {
-                    println!("Variable not found: {}", s);
+                    if debug_mode {
+                        println!("Variable not found: {}", s);
+                    }
                     result.push(Expr::Identifier(s.to_string()));
                 }
             },
             Expr::Call(function, args) => {
-                let mut args = args.clone();
-                args.reverse();
-                if function == "print" {
-                    let mut i = 0;
-                    while i < args.len() {
-                        let value = evaluate(vec![args[i].clone()], state, debug_mode);
-                        let value = &value[0];
-                        match value {
-                            Expr::String(s) => {
-                                print!("{s}");
-                            },
-                            Expr::Number(n) => {
-                                print!("{n}");
-                            },
-                            _ => { panic!("Invalid argument to print"); }
-                        };
-                        i += 1;
-                    }
+                let mut evaluated_args: Vec<Expr> = Vec::new();
+                for arg in args.iter() {
+                    let value = evaluate(&mut vec![arg.clone()], state, debug_mode);
+                    evaluated_args.push(value[0].clone());
                 }
-                else if function == "println" {
-                    let mut i = 0;
-                    if args.len() == 0 {
-                        println!();
-                    }
-                    while i < args.len() {
-                        let value = evaluate(vec![args[i].clone()], state, debug_mode);
-                        let value = &value[0];
+
+                let function_name = match *function.clone() {
+                    Expr::Identifier(name) => name.clone(),
+                    Expr::String(name) => name.clone(),
+                    Expr::AccessProperty(expr, prop) => {
+                        let value = access_property(&expr, prop.as_str(), state);
                         match value {
-                            Expr::String(s) => {
-                                print!("{s}");
-                            },
-                            Expr::Number(n) => {
-                                print!("{n}");
-                            },
-                            _ => { panic!("Invalid argument to println: {:?}", value); }
-                        };
-                        i += 1;
-                    }
-                    println!();
+                            Expr::Identifier(name) => name.clone(),
+                            Expr::Func(name, _args, _block) => name.clone(),
+                            _ => { panic!("Invalid function name"); }
+                        }
+                    },
+                    _ => { panic!("Invalid function name"); }
+                };
+
+                if function_name == "print" {
+                    builtin_print(evaluated_args);
                 }
-                else if state.contains_key(function) {
-                    let function = state[function].clone();
+                else if function_name == "println" {
+                    builtin_println(evaluated_args);
+                }
+                else if state.contains_key(&function_name) {
+                    let function = state[&function_name].clone();
                     match function {
-                        Expr::Func(name, arg_names, block) => {
+                        Expr::Func(_name, arg_names, mut block) => {
                             let mut new_state = state.clone();
                             for i in 0..args.len() {
                                 let name = match &arg_names[i] {
@@ -231,36 +411,36 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
 
                                 new_state.insert(name.to_string(), args[i].clone());
                             }
-                            result.extend(evaluate(*block, &mut new_state, debug_mode));
+                            result.extend(evaluate(&mut block, &mut new_state, debug_mode));
                         },
                         _ => { panic!("Invalid function call: {:?}", function); }
                     }
                 }
                 else {
-                    panic!("Unknown function: {}", function);
+                    panic!("Unknown function: {}", function_name);
                 }
             },
             Expr::If(c, t) => {
-                let condition = evaluate(vec![*c.clone()], state, debug_mode);
+                let condition = evaluate(&mut vec![*c.clone()], state, debug_mode);
                 let condition = &condition[0];
 
                 match condition {
                     Expr::Number(n) => {
                         if *n == 1 {
-                            result.extend(evaluate(*t.clone(), state, debug_mode));
+                            result.extend(evaluate(&mut t.clone(), state, debug_mode));
                         }
                     },
                     _ => { panic!("Invalid condition in if statement"); }
                 }
             },
             Expr::Else(c, t) => {
-                let condition = evaluate(vec![*c.clone()], state, debug_mode);
+                let condition = evaluate(&mut vec![*c.clone()], state, debug_mode);
                 let condition = &condition[0];
 
                 match condition {
                     Expr::Number(n) => {
                         if *n == 0 {
-                            result.extend(evaluate(*t.clone(), state, debug_mode));
+                            result.extend(evaluate(&mut t.clone(), state, debug_mode));
                         }
                     },
                     _ => { panic!("Invalid condition in else statement"); }
@@ -268,14 +448,14 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
             },
             Expr::While(c, b) => {
                 loop {
-                    let condition = evaluate(vec![*c.clone()], state, debug_mode);
+                    let condition = evaluate(&mut vec![*c.clone()], state, debug_mode);
                     let condition = &condition[0];
 
                     match condition {
                         Expr::Number(n) => {
                             if *n == 1 {
                                 // Run the block
-                                result.extend(evaluate(*b.clone(), state, debug_mode));
+                                result.extend(evaluate(&mut *b.clone(), state, debug_mode));
                             } else {
                                 break;
                             }
@@ -287,7 +467,74 @@ pub fn evaluate(expr: Vec<Expr>, state: &mut HashMap<String, Expr>, debug_mode: 
             Expr::Func(name, args, block) => {
                 state.insert(name.to_string(), Expr::Func(name.to_string(), args.clone(), block.clone()));
             }
-            _ => {}
+            Expr::Import(name) => {
+                let filename = format!("{}.myst", name);
+                let mut new_state = state.clone();
+
+                let mut file = std::fs::File::open(filename).unwrap();
+                let mut contents = String::new();
+
+                file.read_to_string(&mut contents).unwrap();
+
+                let mut new_tokens = tokenize(contents, debug_mode);
+                for i in 0..new_tokens.len() {
+                    match new_tokens[i] {
+                        Token::Func => {
+                            match &new_tokens[i + 1] {
+                                Token::Identifier(func_name) => {
+                                    new_tokens[i + 1] = Token::Identifier(format!("{}.{}", name, func_name));
+                                },
+                                _ => { }
+                            }
+                        }
+                        _ => { }
+                    }
+                }
+
+                let mut new_expr = parse(new_tokens, debug_mode);
+
+                // Mystical magic. This is the remaining expression after the import statement. I think.
+                let remaining_expr = expr.split_off(i + 1);
+
+                new_expr.extend(remaining_expr);
+
+                evaluate(&mut new_expr, &mut new_state, debug_mode);
+            }
+            Expr::Include(name) => {
+                let filename = format!("{}.myst", name);
+                let mut new_state = state.clone();
+
+                let mut file = std::fs::File::open(filename).unwrap();
+                let mut contents = String::new();
+
+                file.read_to_string(&mut contents).unwrap();
+
+                let new_tokens = tokenize(contents, debug_mode);
+                let mut new_expr = parse(new_tokens, debug_mode);
+
+                let remaining_expr = expr.split_off(i + 1);
+
+                new_expr.extend(remaining_expr);
+
+                evaluate(&mut new_expr, &mut new_state, debug_mode);
+            }
+            Expr::Array(array) => {
+                let mut new_array: Vec<Expr> = Vec::new();
+
+                for item in array.iter() {
+                    let value = evaluate(&mut vec![item.clone()], state, debug_mode);
+                    new_array.push(value[0].clone());
+                }
+
+                result.push(Expr::Array(Box::new(new_array)));
+            }
+            Expr::AccessProperty(expr, prop) => {
+                let value = evaluate(&mut vec![*expr.clone()], state, debug_mode);
+                result.push(access_property(&value[0], prop, &state));
+            }
+            _ => {
+                println!("Unhandled expression: {:?}", expr[i]);
+            }
         }
 
         i += 1;

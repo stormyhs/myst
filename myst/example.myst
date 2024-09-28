@@ -67,3 +67,15 @@ func add(a, b) {
 }
 
 add(2, 3);
+
+
+// Arrays
+let array = [1, 2, 3, 4, 5];
+println(array);
+
+// Quirkiness :)
+func hi() {
+    println("Arrays are quirky.");
+}
+array = [hi];
+array[0]();

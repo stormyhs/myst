@@ -130,7 +130,10 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 '}' => tokens.push(Token::RCurly),
                 '>' => tokens.push(Token::RArrow),
                 '<' => tokens.push(Token::LArrow),
+                '[' => tokens.push(Token::LBracket),
+                ']' => tokens.push(Token::RBracket),
                 ',' => tokens.push(Token::Comma),
+                '.' => tokens.push(Token::Dot),
                 ' ' => {
                     if tokens.len() == 0 {
                         continue;
@@ -141,15 +144,26 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                         Token::Identifier(s) => {
                             if s == "let" {
                                 tokens.push(Token::Let);
-                            } else if s == "if" {
+                            }
+                            else if s == "if" {
                                 tokens.push(Token::If);
-                            } else if s == "else" {
+                            }
+                            else if s == "else" {
                                 tokens.push(Token::Else);
-                            } else if s == "while" {
+                            }
+                            else if s == "while" {
                                 tokens.push(Token::While);
-                            } else if s == "func" {
+                            }
+                            else if s == "func" {
                                 tokens.push(Token::Func);
-                            } else {
+                            }
+                            else if s == "import" {
+                                tokens.push(Token::Import);
+                            }
+                            else if s == "include" {
+                                tokens.push(Token::Include);
+                            }
+                            else {
                                 tokens.push(Token::Identifier(s));
                             }
                         },

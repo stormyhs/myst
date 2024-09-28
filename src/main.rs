@@ -30,6 +30,11 @@ fn main() {
         }
     }
 
+    if debug_mode {
+        let current_path = env::current_dir().unwrap();
+        println!("Current directory: {}", current_path.display());
+    }
+
     if source == "" {
         println!("No source file path provided. Did you mean to use --repl?");
         return;
@@ -43,13 +48,13 @@ fn main() {
         println!("Tokens: {:?}", tokens);
     }
 
-    let parsed = parser::parse(tokens, debug_mode);
+    let mut parsed = parser::parse(tokens, debug_mode);
     if debug_mode {
         println!("AST:");
         println!("{:#?}", parsed);
     }
 
-    let result = engine::evaluate(parsed, &mut HashMap::new(), debug_mode);
+    let result = engine::evaluate(&mut parsed, &mut HashMap::new(), debug_mode);
     if debug_mode {
         println!("Program evaluated to: {:?}", result);
     }
