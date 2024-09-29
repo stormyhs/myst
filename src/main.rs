@@ -10,10 +10,23 @@ mod parser;
 mod tokens;
 mod engine;
 
-fn run_file(path: &str, debug_mode: bool) -> Vec<tokens::Expr> {
+fn run_file(path: &str, debug_mode: bool, is_testing: bool) -> Vec<tokens::Expr> {
     let start_time = std::time::Instant::now();
 
-    let source = fs::read_to_string(path).expect("Could not read source file");
+    let source = match fs::read_to_string(path) {
+        Ok(s) => s,
+        Err(e) => {
+            if is_testing {
+                println!(
+                    "{} {} {}",
+                    "Could not read".red(),
+                    format!("{}.", path).red(),
+                    "Are you in the tests/ directory?".red()
+                );
+            }
+            panic!("Could not read file: {}", e);
+        }
+    };
 
     let tokens = tokenizer::tokenize(source, debug_mode);
     if debug_mode {
@@ -39,7 +52,7 @@ fn run_test(path: &str, expect: tokens::Expr) -> bool {
     print!("{}: ", path);
     std::io::stdout().flush().unwrap();
 
-    let result = run_file(path, false);
+    let result = run_file(path, false, true);
     if result.len() != 1 || result[0] != expect {
         print!("{}  ", "failed".red());
         print!("{}: {:?}  ", "Expected".yellow(), expect);
@@ -89,12 +102,13 @@ fn main() {
 
         let expect = tokens::Expr::Number(10);
 
-        tests.push(run_test("./tests/variables.myst", expect.clone()));
-        tests.push(run_test("./tests/numbers.myst", expect.clone()));
-        tests.push(run_test("./tests/loops.myst", expect.clone()));
-        tests.push(run_test("./tests/functions.myst", expect.clone()));
-        tests.push(run_test("./tests/conditions.myst", expect.clone()));
-        tests.push(run_test("./tests/arrays.myst", expect.clone()));
+        tests.push(run_test("variables.myst", expect.clone()));
+        tests.push(run_test("numbers.myst", expect.clone()));
+        tests.push(run_test("loops.myst", expect.clone()));
+        tests.push(run_test("functions.myst", expect.clone()));
+        tests.push(run_test("conditions.myst", expect.clone()));
+        tests.push(run_test("arrays.myst", expect.clone()));
+        tests.push(run_test("imports.myst", expect.clone()));
 
         let mut passed = 0;
         for test in &tests {
@@ -119,7 +133,7 @@ fn main() {
             return;
         }
 
-        run_file(&source, debug_mode);
+        run_file(&source, debug_mode, false);
     }
 }
 
