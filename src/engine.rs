@@ -123,6 +123,20 @@ fn access_property(expr: &Expr, prop: &str, state: &HashMap<String, Expr>) -> Ex
                 panic!("Variable not found: {}", name);
             }
         },
+        Expr::Module(expr) => {
+            for item in expr.iter() {
+                match item {
+                    Expr::Func(name, args, block) => {
+                        if name == prop {
+                            return Expr::Func(name.to_string(), args.clone(), block.clone());
+                        }
+                    },
+                    _ => { }
+                }
+            }
+
+            panic!("Module has no property: {}", prop);
+        },
         _ => { panic!("{:?} has no property {:?}", expr, prop); }
     }
 }
@@ -409,7 +423,10 @@ pub fn evaluate(expr: &mut Vec<Expr>, state: &mut HashMap<String, Expr>, debug_m
                         let value = access_property(&expr, prop.as_str(), state);
                         match value {
                             Expr::Identifier(name) => name.clone(),
-                            Expr::Func(name, _args, _block) => name.clone(),
+                            Expr::Func(ref name, ref _args, ref _block) => {
+                                state.insert(name.clone(), value.clone());
+                                name.clone()
+                            },
                             _ => { panic!("Invalid function name"); }
                         }
                     },
@@ -524,29 +541,10 @@ pub fn evaluate(expr: &mut Vec<Expr>, state: &mut HashMap<String, Expr>, debug_m
 
                 file.read_to_string(&mut contents).unwrap();
 
-                let mut new_tokens = tokenize(contents, debug_mode);
-                for i in 0..new_tokens.len() {
-                    match new_tokens[i] {
-                        Token::Func => {
-                            match &new_tokens[i + 1] {
-                                Token::Identifier(func_name) => {
-                                    new_tokens[i + 1] = Token::Identifier(format!("{}.{}", name, func_name));
-                                },
-                                _ => { }
-                            }
-                        }
-                        _ => { }
-                    }
-                }
-
+                let new_tokens = tokenize(contents, debug_mode);
                 let mut new_expr = parse(new_tokens, debug_mode);
 
-                // Mystical magic. This is the remaining expression after the import statement. I think.
-                let remaining_expr = expr.split_off(i + 1);
-
-                new_expr.extend(remaining_expr);
-
-                evaluate(&mut new_expr, &mut new_state, debug_mode);
+                state.insert(name.to_string(), Expr::Module(Box::new(new_expr)));
             }
             Expr::Include(name) => {
                 let filename = format!("{}.myst", name);

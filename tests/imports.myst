@@ -1,0 +1,4 @@
+import module;
+
+module.add(1, 2);
+module.sub(1, 2);

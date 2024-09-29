@@ -1,0 +1,7 @@
+func add(a, b) {
+    a + b;
+}
+
+func sub(a, b) {
+    a - b;
+}

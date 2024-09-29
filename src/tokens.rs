@@ -31,6 +31,8 @@ pub enum Expr {
 
     Import(String),
     Include(String),
+
+    Module(Box<Vec<Expr>>),
 }
 
 #[derive(Debug, Clone)]
