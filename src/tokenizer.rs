@@ -125,7 +125,13 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 },
                 '(' => tokens.push(Token::LParen),
                 ')' => tokens.push(Token::RParen),
-                '"' => in_string = !in_string,
+                '"' => {
+                    if !in_string{
+                        tokens.push(Token::String(String::new()));
+                    }
+
+                    in_string = !in_string
+                },
                 ';' => tokens.push(Token::Semicolon),
                 '{' => {
                     tokens.push(Token::LCurly);

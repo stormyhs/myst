@@ -653,6 +653,7 @@ pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
                 let left = result.pop().expect("Expected value or variable before operator");
                 let right = match &tokens[i + 1] {
                     Token::Number(n) => Expr::Number(*n),
+                    Token::String(c) => Expr::String(c.to_string()),
                     Token::Identifier(s) => Expr::Identifier(s.to_string()),
                     _ => panic!("Expected value or variable before operator")
                 };
