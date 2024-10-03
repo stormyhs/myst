@@ -1,4 +1,4 @@
-use crate::tokens::{ Token, Expr };
+use crate::enums::Token;
 
 pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
@@ -6,11 +6,10 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
     let lines: Vec<&str> = source.lines().collect();
 
     let mut in_string = false;
-    let mut in_comment = false;
     let mut declaring_for = false;
 
     for line in lines {
-        in_comment = false;
+        let mut in_comment = false;
         for c in line.chars() {
             if in_comment {
                 continue;
@@ -98,6 +97,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                     let last = tokens.pop().unwrap();
                     match last {
                         Token::Slash => {
+                            tokens.push(last);
                             in_comment = true;
                         },
                         _ => {
@@ -132,7 +132,26 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
 
                     in_string = !in_string
                 },
-                ';' => tokens.push(Token::Semicolon),
+                ';' => {
+                    let last = tokens.pop().unwrap();
+
+                    match last {
+                        Token::Identifier(s) => {
+                            if s == "return" {
+                                tokens.push(Token::Return);
+                                tokens.push(Token::Semicolon);
+                            }
+                            else {
+                                tokens.push(Token::Identifier(s));
+                                tokens.push(Token::Semicolon);
+                            }
+                        },
+                        _ => {
+                            tokens.push(last);
+                            tokens.push(Token::Semicolon);
+                        }
+                    }
+                },
                 '{' => {
                     tokens.push(Token::LCurly);
                     if declaring_for {
@@ -146,6 +165,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                 ']' => tokens.push(Token::RBracket),
                 ',' => tokens.push(Token::Comma),
                 '.' => tokens.push(Token::Dot),
+                ':' => tokens.push(Token::Colon),
                 ' ' => {
                     if tokens.len() == 0 {
                         continue;
@@ -173,7 +193,7 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                             else if s == "of" {
                                 tokens.push(Token::Of);
                             }
-                            else if s == "func" {
+                            else if s == "fn" {
                                 tokens.push(Token::Func);
                             }
                             else if s == "import" {
@@ -181,6 +201,9 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                             }
                             else if s == "include" {
                                 tokens.push(Token::Include);
+                            }
+                            else if s == "return" {
+                                tokens.push(Token::Return);
                             }
                             else {
                                 tokens.push(Token::Identifier(s.clone()));
@@ -243,5 +266,47 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
         }
     }
 
-    return tokens;
+    // Remove multiline comments
+    let mut new_tokens: Vec<Token> = Vec::new();
+
+    let mut in_multiline_comment = false;
+    let mut i = 0;
+    loop {
+        if i >= tokens.len() {
+            break;
+        }
+
+        match tokens[i] {
+            Token::Slash => {
+                if i + 1 < tokens.len() {
+                    match tokens[i + 1] {
+                        Token::Star => {
+                            in_multiline_comment = true;
+                        },
+                        _ => {}
+                    }
+                }
+            },
+            Token::Star => {
+                if i + 1 < tokens.len() {
+                    match tokens[i + 1] {
+                        Token::Slash => {
+                            in_multiline_comment = false;
+                            i += 1;
+                        },
+                        _ => {}
+                    }
+                }
+            },
+            _ => {
+                if !in_multiline_comment {
+                    new_tokens.push(tokens[i].clone());
+                }
+            }
+        }
+
+        i +=1 ;
+    }
+
+    return new_tokens;
 }

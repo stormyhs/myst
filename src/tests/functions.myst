@@ -1,0 +1,17 @@
+
+fn add(left, right) {
+    let poop = a + b + 3 + d;
+    let fuck = x + y + z;
+
+    fn test() {
+        let hmm = 123;
+    }
+
+}
+
+let test = 1;
+
+fn add(left, right) {
+    let poop = a + b + 3 + d;
+    let fuck = x + y + z;
+};

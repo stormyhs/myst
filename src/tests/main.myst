@@ -1,0 +1,67 @@
+import "io";
+
+/**
+ * A type representing the parameters of a person.
+ * @typedef {Object} PersonParams
+ * @property {String} name - The name of the person.
+ * @property {Number} age - The age of the person.
+ * @property {Boolean} isStudent - Whether the person is a student.
+ */
+type PersonParams = {
+    name: String,
+    age: Number,
+    isStudent: Boolean
+}
+
+/**
+ * A class representing a person.
+ */
+class Person(PersonParams) {
+    let age: Number = 0;
+    let isStudent: Boolean = false;
+    let name: String = "";
+
+    fn _init(name, age, isStudent) {
+        this.name = name;
+        this.age = age;
+        this.isStudent = isStudent;
+    }
+
+    /**
+     * Returns the name of the person.
+     * @returns {String} The name of the person.
+     */
+    fn getName() {
+        return this.name;
+    }
+
+    /**
+     * Returns the age of the person.
+     * @returns {Number} The age of the person.
+     */
+    fn getAge() {
+        return this.age;
+    }
+
+    /**
+     * Returns whether the person is a student.
+     * @returns {Boolean} Whether the person is a student.
+     */
+    fn isStudent() {
+        return this.isStudent;
+    }
+}
+
+fn incrementAge(person: Person) {
+    person.age += 1;
+}
+
+fn main() {
+    let person = new Person("John", 30, true);
+    io.println(person.getName());
+    io.println(person.isStudent());
+
+    io.println(person.getAge());
+    incrementAge(person);
+    io.println(person.getAge());
+}

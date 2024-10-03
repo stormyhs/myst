@@ -1,6 +1,0 @@
-import module;
-
-let result = module.add(10, 5);
-result = module.sub(result, 5);
-
-result;

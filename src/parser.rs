@@ -1,682 +1,262 @@
-use crate::tokens::{Token, Expr, Operator};
+use crate::enums::*;
 
-fn parse_array(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
-    let mut array: Vec<Token> = Vec::new();
-    
-    let mut i = 0;
-    loop {
-        i += 1;
-        if i >= tokens.len() {
-            break;
+pub struct Parser {
+    tokens: Vec<Token>,
+    current: usize,
+    debug_mode: bool
+}
+
+impl Parser {
+    pub fn new(tokens: Vec<Token>, debug_mode: bool) -> Self {
+        Self {
+            tokens,
+            current: 0,
+            debug_mode
         }
-        let token = tokens[i].clone();
+    }
+
+    pub fn parse(&mut self) -> Vec<Expr> {
+        let mut expressions = vec![];
+        while self.current < self.tokens.len() {
+            expressions.push(self.parse_statement())
+        }
+
+        return expressions;
+    }
+
+    fn parse_statement(&mut self) -> Expr {
+        let token = self.peek();
         match token {
-            Token::RBracket => {
-                break;
-            },
-            _ => {
-                array.push(token);
-            }
-        }
-    }
-
-    let parsed_array = parse(array, debug_mode);
-
-    return parsed_array;
-}
-
-pub fn parse(tokens: Vec<Token>, debug_mode: bool) -> Vec<Expr> {
-    let mut i = 0;
-    let mut result: Vec<Expr> = Vec::new();
-
-    let mut declaring_variable = false;
-
-    while i < tokens.len() {
-        match &tokens[i] {
-            Token::Number(n) => {
-                result.push(Expr::Number(*n))
-            },
-            Token::Plus => {
-                if tokens.len() < i + 1 {
-                    panic!("Expected number after operator");
-                }
-
-                let left = result.pop().expect("Expected value or variable before operator");
-                let right = match &tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(*n),
-                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
-                    Token::String(c) => Expr::String(c.to_string()),
-                    Token::LBracket => {
-                        parse_array(tokens[i + 1..].to_vec(), debug_mode)[0].clone()
-                    },
-                    _ => panic!("Expected value or variable before operator, got {:?}", tokens[i + 1])
-                };
-
-                i += 1;
-
-                result.push(Expr::BinOp(Operator::Add, Box::new(left), Box::new(right)));
-            },
-            Token::Minus => {
-                if tokens.len() < i + 1 {
-                    panic!("Expected number after operator");
-                }
-
-                let left = result.pop().expect("Expected value or variable before operator");
-                let right = match &tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(*n),
-                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
-                    _ => panic!("Expected value or variable before operator")
-                };
-
-                i += 1;
-
-                result.push(Expr::BinOp(Operator::Subtract, Box::new(left), Box::new(right)));
-            },
-            Token::Star => {
-                if tokens.len() < i + 1 {
-                    panic!("Expected number after operator");
-                }
-
-                let left = result.pop().expect("Expected value or variable before operator");
-                let right = match &tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(*n),
-                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
-                    _ => panic!("Expected value or variable before operator")
-                };
-
-                i += 1;
-
-                result.push(Expr::BinOp(Operator::Multiply, Box::new(left), Box::new(right)));
-            },
-            Token::Slash => {
-                if tokens.len() < i + 1 {
-                    panic!("Expected number after operator");
-                }
-
-                let left = result.pop().expect("Expected value or variable before operator");
-                let right = match &tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(*n),
-                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
-                    _ => panic!("Expected value or variable before operator")
-                };
-
-                i += 1;
-
-                result.push(Expr::BinOp(Operator::Divide, Box::new(left), Box::new(right)));
-            },
-            Token::Equal => {
-                if tokens.len() < i + 1 {
-                    panic!("Expected number after operator");
-                }
-
-                let left = match result.pop().expect("Expected variable before operator") {
-                    Expr::Identifier(s) => s,
-                    _ => panic!("Expected variable before operator")
-                };
-
-                let mut right: Vec<Token> = Vec::new();
-                i += 1;
-                while i < tokens.len() {
-                    match &tokens[i] {
-                        Token::Semicolon => {
-                            break;
-                        },
-                        _ => {}
-                    }
-                    right.push(tokens[i].clone());
-                    i += 1;
-                }
-
-                let right = parse(right, debug_mode);
-
-                if declaring_variable {
-                    result.push(Expr::BinOp(Operator::Declare, Box::new(Expr::Identifier(left)), Box::new(right[0].clone())));
-                    declaring_variable = false;
-                } else {
-                    result.push(Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(left)), Box::new(right[0].clone())));
-                }
-            },
-
-            Token::String(c) => {
-                result.push(Expr::String(c.to_string()))
-            },
-            Token::Identifier(s) => {
-                let next = tokens.get(i + 1);
-                match next {
-                    Some(Token::LBracket) => {
-                        let index = match tokens.get(i + 2) {
-                            Some(Token::Number(n)) => n.to_string(),
-                            Some(Token::Identifier(s)) => s.to_string(),
-                            _ => panic!("Expected number after bracket")
-                        };
-
-                        result.push(Expr::AccessProperty(Box::new(Expr::Identifier(s.to_string())), index));
-                        i += 3;
-
-                        continue;
-                    },
-                    _ => { }
-                }
-
-                result.push(Expr::Identifier(s.to_string()));
-            },
-
-            Token::Declaration(s, e) => {
-                result.push(Expr::BinOp(Operator::Declare, Box::new(Expr::Identifier(s.to_string())), e.clone()));
-            },
-            Token::Assignment(s, e) => {
-                result.push(Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(s.to_string())), e.clone()));
-            },
-
             Token::Let => {
-                declaring_variable = true;
-            }
-            Token::Import => {
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::Semicolon => {
-                            break;
-                        },
-                        Token::Identifier(name) => {
-                            result.push(Expr::Import(name.to_string()));
-                            break;
-                        }
-                        _ => { }
-                    }
-                }
+                self.parse_declaration()
             },
-            Token::Include => {
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::Semicolon => {
-                            break;
-                        },
-                        Token::Identifier(name) => {
-                            result.push(Expr::Include(name.to_string()));
-                            break;
-                        }
-                        _ => { }
-                    }
-                }
+            Token::Identifier(_name) => {
+                self.parse_identifier()
             },
-
-            Token::LParen => {
-                let name = result.pop().expect("Expected function name before LParen");
-
-                let mut args: Vec<Token> = Vec::new();
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::RParen => {
-                            break;
-                        },
-                        _ => {
-                            args.push(token)
-                        }
-                    }
-                }
-
-                let parsed_args = parse(args, debug_mode);
-
-                result.push(Expr::Call(Box::new(name), Box::new(parsed_args)));
-            }
-
-            Token::RParen => {
-                let mut created_call = false;
-
-                let mut args: Vec<Expr> = Vec::new();
-                loop {
-                    let arg = match result.pop() {
-                        Some(token) => token,
-                        None => break
-                    };
-
-                    match arg {
-                        Expr::Call(n, _) => {
-                            args.reverse();
-                            result.push(
-                                Expr::Call(
-                                    n,
-                                    Box::new(args.clone())
-                                )
-                            );
-                            created_call = true;
-                            break;
-                        },
-                        Expr::AccessProperty(expr, prop) => {
-                            match *expr {
-                                Expr::Identifier(name) => {
-                                    args.reverse();
-                                    result.push(
-                                        Expr::Call(
-                                            Box::new(Expr::AccessProperty(Box::new(Expr::Identifier(name.to_string())), prop)),
-                                            Box::new(args.clone())
-                                        )
-                                    );
-                                },
-                                _ => { }
-                            }
-                            created_call = true;
-                            break;
-                        },
-                        _ => { args.push(arg); }
-                    }
-                }
-
-                if !created_call {
-                    panic!("Could not correctly parse function call and arguments");
-                }
-            }
-            Token::LArrow => {
-                if tokens.len() < i + 1 {
-                    panic!("Expected number after operator");
-                }
-
-                let left = result.pop().expect("Expected value or variable before operator");
-                let right = match &tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(*n),
-                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
-                    _ => panic!("Expected value or variable before operator")
-                };
-
-                i += 1;
-
-                result.push(Expr::BinOp(Operator::Lesser, Box::new(left), Box::new(right)));
-            },
-            Token::RArrow => {
-                if tokens.len() < i + 1 {
-                    panic!("Expected number after operator");
-                }
-
-                let left = result.pop().expect("Expected value or variable before operator");
-                let right = match &tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(*n),
-                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
-                    _ => panic!("Expected value or variable before operator")
-                };
-
-                i += 1;
-
-                result.push(Expr::BinOp(Operator::Greater, Box::new(left), Box::new(right)));
-            },
-            Token::LBracket => {
-                let mut array: Vec<Token> = Vec::new();
-
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::RBracket => {
-                            break;
-                        },
-                        _ => {
-                            array.push(token);
-                        }
-                    }
-                }
-
-                let parsed_array = parse(array, debug_mode);
-
-                result.push(Expr::Array(Box::new(parsed_array)));
-            },
-            Token::RBracket => { },
-
-            Token::Dot => {
-                let last = result.pop().expect("Expected value or variable before operator");
-                let property = match &tokens[i + 1] {
-                    Token::Identifier(s) => s,
-                    _ => panic!("Expected property after dot operator")
-                };
-
-                i += 1;
-
-                result.push(Expr::AccessProperty(Box::new(last), property.to_string()));
-            },
-
-            Token::If => {
-                let mut condition: Vec<Token> = Vec::new();
-
-                loop {
-                    i += 1; // Skip the `if` token
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::LCurly => {
-                            break;
-                        },
-                        _ => {
-                            condition.push(token);
-                        }
-                    }
-                }
-
-                let condition = parse(condition, debug_mode);
-
-                let mut block: Vec<Token> = Vec::new();
-                let mut skip_curlys = 0;
-                loop {
-                    if i >= tokens.len() {
-                        break;
-                    }
-
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::LCurly => {
-                            skip_curlys += 1;
-                            block.push(token);
-                        },
-                        Token::RCurly => {
-                            skip_curlys -= 1;
-                            block.push(token);
-                            if skip_curlys == 0 {
-                                break;
-                            }
-                        },
-                        _ => {
-                            block.push(token);
-                        }
-                    }
-                    i += 1;
-                }
-
-                let block = parse(block, debug_mode);
-
-                result.push(Expr::If(Box::new(condition[0].clone()), Box::new(block.clone())));
-            },
-            Token::Else => {
-                let mut block: Vec<Token> = Vec::new();
-                let mut skip_curlys = 0;
-
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::LCurly => {
-                            skip_curlys += 1;
-                            block.push(token);
-                        },
-                        Token::RCurly => {
-                            skip_curlys -= 1;
-                            block.push(token);
-                            if skip_curlys == 0 {
-                                break;
-                            }
-                        },
-                        _ => {
-                            block.push(token);
-                        }
-                    }
-                }
-
-                let block = parse(block, debug_mode);
-
-                let if_statement = result.pop().expect("Expected if statement before else");
-                let condition = match &if_statement {
-                    Expr::If(c, _) => c,
-                    _ => panic!("Expected if statement before else")
-                };
-
-                result.push(if_statement.clone());
-                result.push(Expr::Else(condition.clone(), Box::new(block.clone())));
-            },
-            Token::While => {
-                let mut condition: Vec<Token> = Vec::new();
-
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::LCurly => {
-                            condition.push(token);
-                            break;
-                        },
-                        _ => {
-                            condition.push(token);
-                        }
-                    }
-                }
-
-                let condition = parse(condition, debug_mode);
-
-                let mut block: Vec<Token> = Vec::new();
-                let mut skip_curlys = 0;
-
-                loop {
-                    if i >= tokens.len() {
-                        break;
-                    }
-
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::LCurly => {
-                            skip_curlys += 1;
-                            block.push(token);
-                        },
-                        Token::RCurly => {
-                            skip_curlys -= 1;
-                            block.push(token);
-                            if skip_curlys == 0 {
-                                break;
-                            }
-                        },
-                        _ => {
-                            block.push(token);
-                        }
-                    }
-                    i += 1;
-                }
-
-                let block = parse(block, debug_mode);
-
-                result.push(Expr::While(Box::new(condition[0].clone()), Box::new(block.clone())));
-            },
-            Token::For => {
-                let iterator = match &tokens[i + 1] {
-                    Token::Identifier(s) => s,
-                    _ => panic!("Expected variable after for keyword")
-                };
-
-                let mut is_variable = true;
-                let array = match &tokens[i + 3] {
-                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
-                    Token::LBracket => {
-                        is_variable = false;
-                        parse_array(tokens[i + 2..].to_vec(), debug_mode)[0].clone()
-                    }
-                    _ => panic!("Expected array after variable in for loop")
-                };
-
-                if !is_variable {
-                    loop {
-                        i += 1;
-                        if i >= tokens.len() {
-                            break;
-                        }
-                        match &tokens[i] {
-                            Token::RBracket => {
-                                break;
-                            },
-                            _ => { }
-                        }
-                    }
-                } else {
-                    i += 3;
-                }
-
-                let mut block: Vec<Token> = Vec::new();
-                let mut skip_curlys = 0;
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::LCurly => {
-                            skip_curlys += 1;
-                            block.push(token);
-                        },
-                        Token::RCurly => {
-                            skip_curlys -= 1;
-                            block.push(token);
-                            if skip_curlys == 0 {
-                                break;
-                            }
-                        },
-                        _ => {
-                            block.push(token);
-                        }
-                    }
-                }
-
-                let block = parse(block, debug_mode);
-
-                result.push(Expr::For(iterator.to_string(), Box::new(array), Box::new(block.clone())));
-            }
-
             Token::Func => {
-                let name = match &tokens[i + 1] {
-                    Token::Identifier(name) => name,
-                    _ => panic!("Expected function name after func keyword")
-                };
+                self.parse_function()
+            }
+            _ => todo!("Token: {:?}", self.peek())
+        }
+    }
 
-                // Move to the start of the list of arguments
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::LParen => {
-                            break;
-                        },
-                        _ => { }
-                    }
-                }
+    /// Parses a function declaration.
+    ///
+    /// Does consume semicolons.
+    fn parse_function(&mut self) -> Expr {
+        self.advance(); // Consume `func`
+        let name = match { self.advance() } {
+            Token::Identifier(name) => name,
+            _ => panic!("Expected an identifier for function declaration, got {:?}", self.peek())
+        };
+        self.advance(); // Consume `(`
 
-                // Collect the arguments
-                let mut args: Vec<Token> = Vec::new();
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::RParen => {
-                            break;
-                        },
-                        _ => args.push(token)
-                    }
-                }
+        let params = self.parse_params();
 
-                // Move to the start of the block
-                let mut block: Vec<Token> = Vec::new();
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::LCurly => {
-                            break;
-                        },
-                        _ => { }
-                    }
-                }
+        let body = self.parse_block();
 
-                // Collect the block
-                let mut ignore_rcurlys = 0;
-                loop {
-                    i += 1;
-                    if i >= tokens.len() {
-                        break;
-                    }
-                    let token = tokens[i].clone();
-                    match token {
-                        Token::RCurly => {
-                            if ignore_rcurlys > 0 {
-                                ignore_rcurlys -= 1;
-                                block.push(token);
-                                continue;
-                            }
-                            break;
-                        },
-                        Token::LCurly => {
-                            ignore_rcurlys += 1;
-                            block.push(token);
-                        },
-                        _ => {
-                            block.push(token);
-                        }
-                    }
-                }
+        let result = Expr::DecFunc(
+            name,
+            Box::new(params),
+            Box::new(body)
+        );
+        
+        return result;
+    }
 
-                let block = parse(block, debug_mode);
-                let args = parse(args, debug_mode);
-
-                result.push(Expr::Func(name.to_string(), Box::new(args), Box::new(block.clone())));
-            },
-
-            Token::Equality => {
-                if tokens.len() < i + 1 {
-                    panic!("Expected number after operator");
-                }
-
-                let left = result.pop().expect("Expected value or variable before operator");
-                let right = match &tokens[i + 1] {
-                    Token::Number(n) => Expr::Number(*n),
-                    Token::String(c) => Expr::String(c.to_string()),
-                    Token::Identifier(s) => Expr::Identifier(s.to_string()),
-                    _ => panic!("Expected value or variable before operator")
-                };
-
-                i += 1;
-
-                result.push(Expr::BinOp(Operator::Equality, Box::new(left), Box::new(right)));
-            },
-
-            Token::LCurly => { },
-            Token::RCurly => { },
-            Token::Semicolon => { },
-            Token::Comma => { },
-
-            _ => {
-                if debug_mode {
-                    println!("Unhandled token: {:?}", tokens[i]);
+    /// Parses a block of code, which is assumed to be a series of statements.
+    ///
+    /// Does consume semicolons.
+    fn parse_block(&mut self) -> Vec<Expr> {
+        let mut block = vec![];
+        loop {
+            let token = self.peek();
+            match token {
+                Token::LCurly => {
+                    self.advance(); // Consume `{`
+                },
+                Token::RCurly => {
+                    self.advance(); // Consume `}`
+                    break;
+                },
+                _ => {
+                    let statement = self.parse_statement();
+                    block.push(statement);
                 }
             }
         }
 
-        i += 1;
+        match self.peek() {
+            Token::Semicolon => {
+                self.advance(); // Consume `;`
+            },
+            _ => {}
+        }
+
+        return block;
     }
 
-    return result;
+    /// Parses the arguments of a function declaration.
+    ///
+    /// Use this to parse params during declaration, not during a call.
+    ///
+    /// Does consume semicolons.
+    fn parse_params(&mut self) -> Vec<String> {
+        let mut params = vec![];
+        loop {
+            let token = self.peek();
+            match token {
+                Token::RParen => {
+                    self.advance(); // Consume `)`
+                    break;
+                },
+                Token::LParen => {
+                    self.advance(); // Consume `(`
+                    continue;
+                },
+                Token::Comma => {
+                    self.advance(); // Consume `,`
+                    continue;
+                },
+                Token::Identifier(param) => {
+                    self.advance(); // Consume identifier
+                    params.push(param);
+                },
+                _ => {
+                    panic!("Unexpected token while parsing params: {:?}", token);
+                }
+            }
+        }
+
+        return params;
+    }
+
+    /// Turns `Token::Identifier` into `Expr::Identifier`
+    ///
+    /// Does NOT consume semicolons.
+    fn parse_identifier(&mut self) -> Expr {
+        let ident = match self.advance() {
+            Token::Identifier(name) => name,
+            _ => panic!("Expected an identifier, got ?")
+        };
+
+        let result = Expr::Identifier(ident);
+
+        return result;
+    }
+
+    /// Parses a declaration, which is assumed to be a `let` statement.
+    ///
+    /// Does consume semicolons.
+    fn parse_declaration(&mut self) -> Expr {
+        self.advance(); // Consume `let`
+        let name = match self.advance() {
+            Token::Identifier(name) => name,
+            _ => panic!("Expected an identifier for declaration, got {:?}", self.peek())
+        };
+        self.advance(); // Consume `=`
+        
+        let value = match self.peek() {
+            Token::String(_) => {
+                self.parse_string()
+            },
+            _ => self.parse_expression()
+        };
+
+        let result = Expr::BinOp(Operator::Declare, Box::new(Expr::String(name)), Box::new(value));
+
+        // `parse_expression` consumes the semicolon, but `parse_string` does not.
+        match self.peek() {
+            Token::Semicolon => {
+                self.advance(); // Consume `;`
+            },
+            _ => {}
+        }
+
+        return result;
+    }
+
+    /// Parses an expression, which is assumed to be series of numbers and operators.
+    ///
+    /// Example: `1 + 2 + 3`
+    ///
+    /// Does consume semicolons.
+    fn parse_expression(&mut self) -> Expr {
+        let mut result = self.parse_number();
+
+        loop {
+            let operator = self.advance();
+            let operator = match operator {
+                Token::Plus => Operator::Add,
+                Token::Minus => Operator::Subtract,
+                Token::Star => Operator::Multiply,
+                Token::Slash => Operator::Divide,
+                Token::Semicolon => {
+                    break
+                },
+                _ => panic!("Expected an operator, got {:?}", operator)
+            };
+
+            let right = self.parse_number();
+
+            result = Expr::BinOp(operator, Box::new(result), Box::new(right));
+        }
+
+        return result;
+    }
+
+    /// Parses a `Token::Number` into an `Expr::Number`, or a Token::Identifier into an `Expr::Identifier`.
+    ///
+    /// Does NOT consume semicolons.
+    fn parse_number(&mut self) -> Expr {
+        let token = self.advance();
+        let result = match token {
+            Token::Number(value) => Expr::Number(value),
+            Token::Identifier(name) => Expr::Identifier(name),
+            _ => panic!("Expected a number, got {:?}", token)
+        };
+
+        return result;
+    }
+
+    /// Parses a `Token::String` into an `Expr::String`.
+    ///
+    /// Does NOT consume semicolons.
+    fn parse_string(&mut self) -> Expr {
+        let token = self.advance();
+        let result = match token {
+            Token::String(value) => Expr::String(value),
+            _ => panic!("Expected a string, got {:?}", token)
+        };
+
+        return result;
+    }
+
+    /// Returns the current token, then advances to the next one.
+    fn advance(&mut self) -> Token {
+        self.current += 1;
+
+        match self.tokens.get(self.current - 1) {
+            Some(token) => {
+                return token.clone();
+            },
+            None => {
+                Token::EOF
+            }
+        }
+
+    }
+
+    /// Returns the current token without advancing.
+    fn peek(&self) -> Token {
+        match self.tokens.get(self.current) {
+            Some(token) => {
+                return token.clone();
+            },
+            None => {
+                Token::EOF
+            }
+        }
+    }
 }
+

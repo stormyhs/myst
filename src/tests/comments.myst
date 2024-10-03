@@ -1,0 +1,14 @@
+
+
+/**
+ * A type representing the parameters of a person.
+ * @typedef {Object} PersonParams
+ * @property {String} name - The name of the person.
+ * @property {Number} age - The age of the person.
+ * @property {Boolean} isStudent - Whether the person is a student.
+ */
+type PersonParams = {
+    name: String,
+    age: Number,
+    isStudent: Boolean
+}
