@@ -1,6 +1,6 @@
 use crate::enums::Token;
 
-pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
+pub fn tokenize(source: String) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
 
     let lines: Vec<&str> = source.lines().collect();
@@ -10,6 +10,11 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
 
     for line in lines {
         let mut in_comment = false;
+
+        // Poor man's line tracking.
+        // This is to prevent `//` comments from triggering even if they are in seperate lines.
+        let mut slash_in_line = false; 
+
         for c in line.chars() {
             if in_comment {
                 continue;
@@ -98,13 +103,18 @@ pub fn tokenize(source: String, debug_mode: bool) -> Vec<Token> {
                     match last {
                         Token::Slash => {
                             tokens.push(last);
-                            in_comment = true;
+                            tokens.push(Token::Slash);
+                            if slash_in_line {
+                                in_comment = true;
+                            }
                         },
                         _ => {
                             tokens.push(last);
                             tokens.push(Token::Slash);
                         }
                     }
+
+                    slash_in_line = true;
                 },
                 '=' => {
                     if tokens.len() == 0 {
