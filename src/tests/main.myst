@@ -57,7 +57,7 @@ fn incrementAge(person: Person) {
 }
 
 fn main() {
-    let person = new Person("John", 30, true);
+    let person = new Person("Fortnite", 56, false);
     io.println(person.getName());
     io.println(person.isStudent());
 
@@ -65,3 +65,4 @@ fn main() {
     incrementAge(person);
     io.println(person.getAge());
 }
+

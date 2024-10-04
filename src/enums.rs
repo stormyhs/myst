@@ -7,16 +7,22 @@ pub enum Expr {
 
     Number(i64),
     String(String),
-
+    Array(Box<Vec<Expr>>),
     Identifier(String),
+
+    ArrayAccess(String, Box<Expr>),
+    PropertyAccess(Box<Expr>, Box<Expr>),
     
-    If(Box<Expr>, Box<Vec<Expr>>),
-    Else(Box<Expr>, Box<Vec<Expr>>),
+    If(Box<Expr>, Box<Vec<Expr>>, Box<Vec<Expr>>),
+    While(Box<Expr>, Box<Vec<Expr>>),
+    For(String, Box<Expr>, Box<Vec<Expr>>),
 
     DecFunc(String, Box<Vec<String>>, Box<Vec<Expr>>),
     CallFunc(String, Box<Vec<Expr>>),
 
-    Declare(String, Box<Expr>)
+    Import(String),
+
+    Return(Box<Expr>),
 }
 
 #[derive(Debug, Clone)]

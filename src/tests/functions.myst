@@ -1,17 +1,19 @@
+import io;
 
 fn add(left, right) {
-    let poop = a + b + 3 + d;
-    let fuck = x + y + z;
+    return left + right;
 
-    fn test() {
-        let hmm = 123;
-    }
-
+    println("this shoudl never ruin");
 }
 
-let test = 1;
+fn subtract(left, right) {
+    return left - right;
+}
 
-fn add(left, right) {
-    let poop = a + b + 3 + d;
-    let fuck = x + y + z;
-};
+fn main() {
+    fn doThing() {
+        let result = add(1, 2) + subtract(3, 4);
+    }
+
+    return doThing();
+}

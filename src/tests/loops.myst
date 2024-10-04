@@ -1,0 +1,11 @@
+
+
+
+while 1 {
+    println("i always run");
+
+    for i of array {
+        println(i);
+    }
+}
+

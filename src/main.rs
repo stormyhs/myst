@@ -4,6 +4,11 @@ use std::fs;
 mod enums;
 mod tokenizer;
 mod parser;
+mod engine;
+
+use ::rainbow_wrapper::rainbow_wrapper::wrapper::Wrapper;
+use ::rainbow_wrapper::rainbow_wrapper::types::*;
+use ::rainbow_wrapper::var;
 
 fn main() {
     let mut args: Vec<String> = env::args().collect();
@@ -44,15 +49,30 @@ fn main() {
     }
 
     let source = std::fs::read_to_string(source).expect("Could not read source file");
-    let tokens = tokenizer::tokenize(source, debug_mode);
+    let tokens = tokenizer::tokenize(source);
     if debug_mode {
         println!("\n\nTokens: {:?}\n\n", tokens);
     }
 
-    let mut parser = parser::Parser::new(tokens.clone(), debug_mode);
+    let mut parser = parser::Parser::new(tokens.clone());
     let ast = parser.parse();
     if debug_mode {
         println!("\n\nAST: {:#?}", ast);
     }
 
+    /*
+    let mut wrapper = Wrapper::new();
+    let create_var_bytes = var!(
+        Value::TYPE(vec![Type::I16]),
+        Value::NAME("temp".to_string())
+    );
+    wrapper.push_bytes(create_var_bytes);
+    engine::eval(ast, &mut wrapper);
+
+    println!("Myst source code translated to Rainbow bytes:\n{:?}", wrapper.bytes);
+
+    fs::write("output.rbb", wrapper.emit()).expect("Could not write bytecode to file");
+
+    println!("Bytecode written to output.rbb");
+    */
 }
