@@ -29,4 +29,4 @@ Please note that if you are using cargo to run myst, you need `-- --debug` to pa
 ---
 
 ### Licensing
-This project is multi-licensed under both GPLv3, as well as the Non AI Usage License. Both licenses apply simultaniously.
+This project is multi-licensed under both GPLv3, as well as the Non AI Usage License. Both licenses apply simultaneously.
