@@ -52,9 +52,30 @@ pub fn tokenize(source: String) -> Vec<Token> {
                     let last = tokens.pop().unwrap();
 
                     match last {
+                        Token::Minus => {
+                            let behind = tokens.pop().unwrap();
+                            match behind {
+                                Token::Plus | Token::Minus | Token::Equal => {
+                                    tokens.push(behind);
+                                    let number = c.to_digit(10).unwrap() as i64;
+                                    tokens.push(Token::Number(-number));
+                                },
+                                _ => {
+                                    tokens.push(behind);
+                                    tokens.push(last);
+                                    let number = c.to_digit(10).unwrap() as i64;
+                                    tokens.push(Token::Number(number));
+                                }
+                            }
+                        }
                         Token::Number(n) => {
-                            let new_number = n * 10 + c.to_digit(10).unwrap() as i64;
-                            tokens.push(Token::Number(new_number));
+                            if n < 0 {
+                                let new_number = n * 10 - c.to_digit(10).unwrap() as i64;
+                                tokens.push(Token::Number(new_number));
+                            } else {
+                                let new_number = n * 10 + c.to_digit(10).unwrap() as i64;
+                                tokens.push(Token::Number(new_number));
+                            }
                         },
                         Token::String(s) => {
                             tokens.push(Token::String(s + &c.to_string()));
@@ -212,6 +233,9 @@ pub fn tokenize(source: String) -> Vec<Token> {
                             else if s == "include" {
                                 tokens.push(Token::Include);
                             }
+                            else if s == "class" {
+                                tokens.push(Token::Class);
+                            }
                             else if s == "return" {
                                 tokens.push(Token::Return);
                             }
@@ -293,7 +317,9 @@ pub fn tokenize(source: String) -> Vec<Token> {
                         Token::Star => {
                             in_multiline_comment = true;
                         },
-                        _ => {}
+                        _ => {
+                            new_tokens.push(tokens[i].clone());
+                        }
                     }
                 }
             },
@@ -304,7 +330,9 @@ pub fn tokenize(source: String) -> Vec<Token> {
                             in_multiline_comment = false;
                             i += 1;
                         },
-                        _ => {}
+                        _ => {
+                            new_tokens.push(tokens[i].clone());
+                        }
                     }
                 }
             },
