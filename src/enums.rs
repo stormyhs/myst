@@ -20,6 +20,9 @@ pub enum Expr {
     DecFunc(String, Box<Vec<String>>, Box<Vec<Expr>>),
     CallFunc(String, Box<Vec<Expr>>),
 
+    DecClass(String, Box<Vec<Expr>>),
+    InstantiateClass(String, Box<Vec<Expr>>),
+
     Import(String),
 
     Return(Box<Expr>),
@@ -56,6 +59,7 @@ pub enum Token {
     Func,
     Import,
     Include,
+    Class,
     Return,
 
     EOF

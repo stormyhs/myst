@@ -1,0 +1,19 @@
+
+
+class Person {
+    let name = "Unnamed Person";
+    let age = 69;
+
+    fn init(this, name, age) {
+        this.name = name;
+    }
+
+    fn info(this) {
+        io.println("My name is {this.name} and I am {this.age} years old");
+    }
+}
+
+let person = new Person();
+person.info();
+
+

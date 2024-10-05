@@ -60,13 +60,12 @@ fn main() {
         println!("\n\nAST: {:#?}", ast);
     }
 
-    /*
     let mut wrapper = Wrapper::new();
     let create_var_bytes = var!(
         Value::TYPE(vec![Type::I16]),
         Value::NAME("temp".to_string())
     );
-    wrapper.push_bytes(create_var_bytes);
+    wrapper.push(create_var_bytes);
     engine::eval(ast, &mut wrapper);
 
     println!("Myst source code translated to Rainbow bytes:\n{:?}", wrapper.bytes);
@@ -74,5 +73,4 @@ fn main() {
     fs::write("output.rbb", wrapper.emit()).expect("Could not write bytecode to file");
 
     println!("Bytecode written to output.rbb");
-    */
 }

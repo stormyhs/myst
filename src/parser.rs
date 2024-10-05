@@ -16,7 +16,8 @@ impl Parser {
     pub fn parse(&mut self) -> Vec<Expr> {
         let mut expressions = vec![];
         while self.current < self.tokens.len() {
-            expressions.push(self.parse_statement())
+            let expr = self.parse_statement();
+            expressions.push(expr);
         }
 
         return expressions;
@@ -55,8 +56,32 @@ impl Parser {
             Token::Import => {
                 self.parse_import()
             },
+            Token::Class => {
+                self.parse_class()
+            },
+            Token::String(_) => {
+                self.parse_string()
+            }
             _ => todo!("Token: {:?}", self.peek())
         }
+    }
+
+    fn parse_class(&mut self) -> Expr {
+        self.advance(); // Consume `class`
+        let name = match self.advance() {
+            Token::Identifier(name) => name,
+            _ => panic!("Expected an identifier for class declaration, got {:?}", self.peek())
+        };
+
+        let body = self.parse_block();
+        println!("Parsed class body: {:?}", body);
+
+        let result = Expr::DecClass(
+            name,
+            Box::new(body)
+        );
+
+        return result;
     }
 
     fn parse_while(&mut self) -> Expr {
@@ -163,7 +188,7 @@ impl Parser {
             _ => panic!("Expected an identifier for function call, got {:?}", self.peek())
         };
 
-        self.advance(); // Consume `(`
+        let p = self.advance(); // Consume `(`
 
         let mut args = vec![];
         loop {
@@ -192,7 +217,9 @@ impl Parser {
                     break;
                 },
                 _ => {
+                    println!("1");
                     let arg = self.parse_expression();
+                    println!("2");
                     args.push(arg);
                 }
             }
@@ -233,6 +260,8 @@ impl Parser {
             Box::new(params),
             Box::new(body)
         );
+
+        println!("Parsed function: {:?}", result);
         
         return result;
     }
@@ -254,6 +283,7 @@ impl Parser {
                 },
                 _ => {
                     let statement = self.parse_statement();
+                    println!("Parsed statement: {:?}", statement);
                     block.push(statement);
                 }
             }
@@ -308,10 +338,9 @@ impl Parser {
     ///
     /// Does NOT consume semicolons.
     fn parse_identifier(&mut self) -> Expr {
-        println!("Parsing identifier");
         let ident = match self.advance() {
             Token::Identifier(name) => name,
-            _ => panic!("Expected an identifier,got ?")
+            _ => panic!("Expected an identifier, got ?")
         };
 
         match self.peek() {
@@ -335,7 +364,8 @@ impl Parser {
             Token::Equal => {
                 self.advance(); // Consume `=`
                 let value = self.parse_expression();
-                let result = Expr::BinOp(Operator::Assign, Box::new(Expr::String(ident)), Box::new(value));
+                self.retreat(); // `parse_expression` consumes the semicolon, but `parse_identifier` does not. This is dumb.
+                let result = Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(ident)), Box::new(value));
                 return result;
             },
             Token::Dot => { // Likely a property access
@@ -345,8 +375,12 @@ impl Parser {
                     Box::new(Expr::Identifier(ident)),
                     Box::new(property)
                 );
+
                 return result;
             }
+            Token::Semicolon => {
+                return Expr::Identifier(ident);
+            },
             _ => {}
         }
 
@@ -375,7 +409,7 @@ impl Parser {
             _ => {}
         }
 
-        let result = Expr::BinOp(Operator::Declare, Box::new(Expr::String(name)), Box::new(value));
+        let result = Expr::BinOp(Operator::Declare, Box::new(Expr::Identifier(name)), Box::new(value));
 
         // `parse_expression` consumes the semicolon, but `parse_string` does not.
         match self.peek() {
@@ -397,7 +431,6 @@ impl Parser {
     ///
     /// Does consume semicolons.
     fn parse_expression(&mut self) -> Expr {
-        println!("Parsing expression");
         let mut result = match self.peek() {
             Token::String(_) => {
                 self.parse_string()
@@ -413,8 +446,6 @@ impl Parser {
             },
             _ => panic!("Expected a number, string, or identifier, got {:?}", self.peek())
         };
-
-        println!("Result: {:?}", result);
 
         match result {
             Expr::CallFunc(_, _) => {
