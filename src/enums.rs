@@ -1,8 +1,6 @@
 
 #[derive(Debug, Clone)]
 pub enum Expr {
-    NoOp,
-
     BinOp(Operator, Box<Expr>, Box<Expr>),
 
     Number(i64),

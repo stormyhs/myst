@@ -1,5 +1,3 @@
-
-
 class Person {
     let name = "Unnamed Person";
     let age = 69;
@@ -15,5 +13,4 @@ class Person {
 
 let person = new Person();
 person.info();
-
 

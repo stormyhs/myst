@@ -188,7 +188,7 @@ impl Parser {
             _ => panic!("Expected an identifier for function call, got {:?}", self.peek())
         };
 
-        let p = self.advance(); // Consume `(`
+        self.advance(); // Consume `(`
 
         let mut args = vec![];
         loop {

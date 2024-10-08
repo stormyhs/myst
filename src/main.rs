@@ -17,22 +17,40 @@ fn main() {
     let mut debug_mode = false;
     let mut running_tests = false;
     let mut source = String::new();
+    let mut output_path = String::new();
 
-    for arg in &args {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = args[i].clone();
         match arg.as_str() {
+            "--" => {
+                i += 1;
+                continue;
+            }
             "--debug" | "-d" => {
                 debug_mode = true;
             },
             "--test" | "-t" => {
                 running_tests = true;
             }
-
+            "--output" | "-o" => {
+                output_path = args[i + 1].clone();
+                println!("Output path: {}", output_path);
+                i += 1;
+            },
             _ => {
-                if source == "" {
-                    source = arg.to_string();
-                }
+                source = arg;
+                println!("Source file: {}", source);
             }
         }
+
+        println!("{}", i);
+
+        i += 1;
+    }
+
+    if output_path == "" {
+        output_path = "output.rbb".to_string();
     }
 
     if running_tests {
@@ -68,9 +86,9 @@ fn main() {
     wrapper.push(create_var_bytes);
     engine::eval(ast, &mut wrapper);
 
-    println!("Myst source code translated to Rainbow bytes:\n{:?}", wrapper.bytes);
+    if debug_mode {
+        println!("Myst source code translated to Rainbow bytes:\n{:?}", wrapper.bytes);
+    }
 
-    fs::write("output.rbb", wrapper.emit()).expect("Could not write bytecode to file");
-
-    println!("Bytecode written to output.rbb");
+    fs::write(output_path, wrapper.emit()).expect("Could not write bytecode to file");
 }
