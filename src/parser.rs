@@ -13,6 +13,9 @@ impl Parser {
         }
     }
 
+    /// Parses the entire token stream.
+    ///
+    /// This is the main entry point for the parser.
     pub fn parse(&mut self) -> Vec<Expr> {
         let mut expressions = vec![];
         while self.current < self.tokens.len() {
@@ -23,6 +26,9 @@ impl Parser {
         return expressions;
     }
 
+    /// Parses any statement, whatsoever it may be, by calling the appropriate function.
+    ///
+    /// Does consume semicolons.
     fn parse_statement(&mut self) -> Expr {
         let token = self.peek();
         match token {
@@ -66,6 +72,9 @@ impl Parser {
         }
     }
 
+    /// Parses a class declaration.
+    ///
+    /// Does consume semicolons.
     fn parse_class(&mut self) -> Expr {
         self.advance(); // Consume `class`
         let name = match self.advance() {
@@ -83,6 +92,9 @@ impl Parser {
         return result;
     }
 
+    /// Parses a while loop.
+    ///
+    /// Does consume semicolons.
     fn parse_while(&mut self) -> Expr {
         self.advance(); // Consume `while`
         let condition = self.parse_expression();
@@ -96,6 +108,9 @@ impl Parser {
         return result;
     }
 
+    /// Parses a for loop.
+    ///
+    /// Does consume semicolons.
     fn parse_for(&mut self) -> Expr {
         self.advance(); // Consume `for`
         let iterator = match self.advance() {
@@ -116,6 +131,9 @@ impl Parser {
         return result;
     }
 
+    /// Parses an if statement, including else if and else.
+    ///
+    /// Does consume semicolons.
     fn parse_conditional(&mut self) -> Expr {
         self.advance(); // Consume `if`
         let condition = self.parse_expression();
@@ -146,6 +164,9 @@ impl Parser {
         return result;
     }
 
+    /// Parses an import statement.
+    ///
+    /// Does consume semicolons.
     fn parse_import(&mut self) -> Expr {
         self.advance(); // Consume `import`
         let name = match self.advance() {
@@ -165,6 +186,9 @@ impl Parser {
         return result;
     }
 
+    /// Parses a return statement.
+    ///
+    /// Does consume semicolons.
     fn parse_return(&mut self) -> Expr {
         self.advance(); // Consume `return`
         let value = self.parse_expression();
@@ -181,6 +205,9 @@ impl Parser {
         return result;
     }
 
+    /// Parses a function call.
+    ///
+    /// Does consume semicolons.
     fn parse_call(&mut self) -> Expr {
         let name = match self.advance() {
             Token::Identifier(name) => name,
@@ -237,6 +264,9 @@ impl Parser {
         return result;
     }
 
+    /// Parses JUST the arguments within parens.
+    ///
+    /// Does consume semicolons.
     fn parse_args(&mut self) -> Vec<Expr> {
         self.advance(); // Consume `(`
 
@@ -369,7 +399,12 @@ impl Parser {
 
     /// Turns `Token::Identifier` into `Expr::Identifier`
     ///
-    /// Does NOT consume semicolons.
+    /// Does NOT consume semicolons, except in the case of a property access.
+    ///
+    /// Example:
+    /// ```rs
+    /// someThing.someProp; // This will consume the semicolon.
+    /// ```
     fn parse_identifier(&mut self) -> Expr {
         let ident = match self.advance() {
             Token::Identifier(name) => name,
@@ -428,6 +463,7 @@ impl Parser {
                 return result;
             }
             Token::Semicolon => {
+                self.advance(); // Consume `;`
                 return Expr::Identifier(ident);
             },
             _ => {}
