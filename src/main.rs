@@ -70,7 +70,7 @@ fn main() {
     let source = std::fs::read_to_string(source).expect("Could not read source file");
     let tokens = tokenizer::tokenize(source);
     if debug_mode {
-        println!("\n\nTokens: {:?}\n\n", tokens);
+        println!("\n\nTokens: {:?}", tokens);
     }
 
     let mut parser = parser::Parser::new(tokens.clone());
@@ -100,7 +100,7 @@ fn main() {
     engine::eval(ast, &mut wrapper);
 
     if debug_mode {
-        println!("Myst source code translated to Rainbow bytes:\n{:?}", wrapper.bytes);
+        println!("\n\nMyst source code translated to Rainbow bytes:\n{:?}", wrapper.bytes);
     }
 
     fs::write(output_path, wrapper.emit()).expect("Could not write bytecode to file");

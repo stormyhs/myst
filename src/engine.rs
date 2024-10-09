@@ -10,331 +10,572 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
     while i < ast.len() {
         match &ast[i] {
             Expr::BinOp(op, left, right) => {
-                match op {
-                    Operator::Add => {
-                        match (*left.clone(), *right.clone()) {
-                            (Expr::Number(l), Expr::Number(r)) => {
-                                let addition = add!(
-                                    immediate!(SIGNED(l)),
+                /* Number, Identifier, BinOp, CallFunc, ArrayAccess
+                *
+                * Because I am bad at rust, I'm gonna binary system this match statement.
+                * Mad? I don't care.
+                *
+                * number - number
+                * number - identifier
+                * number - binop
+                * number - callfunc
+                * number - arrayaccess
+                *
+                * identifier - number
+                * identifier - identifier
+                * identifier - binop
+                * identifier - callfunc
+                * identifier - arrayaccess
+                *
+                * binop - number
+                * binop - identifier
+                * binop - binop
+                * binop - callfunc
+                * binop - arrayaccess
+                *
+                * callfunc - number
+                * callfunc - identifier
+                * callfunc - binop
+                * callfunc - callfunc
+                * callfunc - arrayaccess
+                *
+                * arrayaccess - number
+                * arrayaccess - identifier
+                * arrayaccess - binop
+                * arrayaccess - callfunc
+                * arrayaccess - arrayaccess
+                *
+                */
+                match (*left.clone(), *right.clone()) {
+                    (Expr::Number(l), Expr::Number(r)) => {
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                immediate!(SIGNED(l)),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                immediate!(SIGNED(l)),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                immediate!(SIGNED(l)),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                immediate!(SIGNED(l)),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Assign => {
+                                mov!(
                                     immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(addition);
-                            },
-                            (Expr::Identifier(l), Expr::Number(r)) => {
-                                let addition = add!(
-                                    ident!(l.clone()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(addition);
-                            },
-                            (Expr::Identifier(l), Expr::Identifier(r)) => {
-                                let addition = add!(
-                                    ident!(l.clone()),
-                                    ident!(r.clone()),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(addition);
-                            },
-                            (Expr::BinOp(_, _, _), Expr::Number(r)) => {
-                                eval(vec![*left.clone()], wrapper); // Saves left side BinOp result into `temp`
-
-                                let addition = add!(
-                                    ident!("temp".to_string()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(addition);
-                            },
-                            (Expr::CallFunc(_, _), Expr::Number(r)) => {
-                                eval(vec![*left.clone()], wrapper);
-
-                                let addition = add!(
-                                    ident!("temp".to_string()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(addition);
+                                    ident!(l.to_string())
+                                )
                             }
-                            (Expr::ArrayAccess(_, _), Expr::ArrayAccess(_, _)) => {
-                                eval(vec![*left.clone()], wrapper);
-                                
-                                let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
-                                wrapper.push(bytes);
-
-                                eval(vec![*right.clone()], wrapper);
-
-                                let bytes = add!(
-                                    ident!("temp2".to_string()),
-                                    ident!("temp".to_string()),
-                                    ident!("temp".to_string())
+                            Operator::Declare => {
+                                let bytes = var!(
+                                    Value::TYPE(vec![Type::I64]),
+                                    Value::NAME(l.to_string())
                                 );
                                 wrapper.push(bytes);
-                            }
 
-                            _ => todo!("Got {:?} and {:?}", left, right)
-                        }
-                    },
-                    Operator::Subtract => {
-                        match (*left.clone(), *right.clone()) {
-                            (Expr::Number(l), Expr::Number(r)) => {
-                                let subtraction = sub!(
-                                    immediate!(SIGNED(l)),
+                                mov!(
                                     immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
+                                    ident!(l.to_string())
+                                )
 
-                                wrapper.push(subtraction);
-                            },
-                            (Expr::Identifier(l), Expr::Number(r)) => {
-                                let subtraction= sub!(
-                                    ident!(l.clone()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(subtraction);
-                            },
-                            (Expr::Identifier(l), Expr::Identifier(r)) => {
-                                let subtraction= sub!(
-                                    ident!(l.clone()),
-                                    ident!(r.clone()),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(subtraction);
-                            },
-                            (Expr::BinOp(_, _, _), Expr::Number(r)) => {
-                                eval(vec![*left.clone()], wrapper); // Saves left side BinOp result into `temp`
-
-                                let subtraction= sub!(
-                                    ident!("temp".to_string()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(subtraction);
-                            },
-
-                            _ => todo!("Got {:?} and {:?}", left, right)
-                        }
-                    },
-                    Operator::Multiply => {
-                        match (*left.clone(), *right.clone()) {
-                            (Expr::Number(l), Expr::Number(r)) => {
-                                let bytes = mul!(
-                                    immediate!(SIGNED(l)),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(bytes);
-                            },
-                            (Expr::Identifier(l), Expr::Number(r)) => {
-                                let bytes = mul!(
-                                    ident!(l.clone()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(bytes);
-                            },
-                            (Expr::Identifier(l), Expr::Identifier(r)) => {
-                                let bytes = mul!(
-                                    ident!(l.clone()),
-                                    ident!(r.clone()),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(bytes);
-                            },
-                            (Expr::BinOp(_, _, _), Expr::Number(r)) => {
-                                eval(vec![*left.clone()], wrapper); // Saves left side BinOp result into `temp`
-
-                                let bytes = mul!(
-                                    ident!("temp".to_string()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(bytes);
-                            },
-
-                            _ => todo!("Got {:?} and {:?}", left, right)
-                        }
-                    }
-                    Operator::Divide => {
-                        match (*left.clone(), *right.clone()) {
-                            (Expr::Number(l), Expr::Number(r)) => {
-                                let bytes = div!(
-                                    immediate!(SIGNED(l)),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(bytes);
-                            },
-                            (Expr::Identifier(l), Expr::Number(r)) => {
-                                let bytes = div!(
-                                    ident!(l.clone()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(bytes);
-                            },
-                            (Expr::Identifier(l), Expr::Identifier(r)) => {
-                                let bytes = div!(
-                                    ident!(l.clone()),
-                                    ident!(r.clone()),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(bytes);
-                            },
-                            (Expr::BinOp(_, _, _), Expr::Number(r)) => {
-                                eval(vec![*left.clone()], wrapper); // Saves left side BinOp result into `temp`
-
-                                let bytes = div!(
-                                    ident!("temp".to_string()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp".to_string())
-                                );
-
-                                wrapper.push(bytes);
-                            },
-
-                            _ => todo!("Got {:?} and {:?}", left, right)
-                        }
-                    }
-                    Operator::Declare => {
-                        let left = match *left.clone() {
-                            Expr::Identifier(name) => name.clone(),
-                            _ => panic!("wtf")
-                        };
-
-                        match *right.clone() {
-                            Expr::Number(n) => {
-                                let declaration = var!(
-                                    rbtype!(I64),
-                                    name!(left.clone())
-                                );
-
-                                wrapper.push(declaration);
-
-                                let assign = mov!(
-                                    immediate!(SIGNED(n)),
-                                    ident!(left)
-                                );
-
-                                wrapper.push(assign);
-                            },
-                            Expr::BinOp(_, _, _) => {
-                                eval(vec![*right.clone()], wrapper);
-
-                                let declaration = var!(
-                                    rbtype!(I64),
-                                    name!(left.clone())
-                                );
-
-                                wrapper.push(declaration);
-
-                                let assign = mov!(
-                                    ident!("temp".to_string()),
-                                    ident!(left)
-                                );
-
-                                wrapper.push(assign);
-                            }
-                            Expr::CallFunc(_, _) => {
-                                eval(vec![*right.clone()], wrapper);
-
-                                let declaration = var!(
-                                    rbtype!(I64),
-                                    name!(left.clone())
-                                );
-
-                                wrapper.push(declaration);
-
-                                let assign = mov!(
-                                    ident!("temp".to_string()),
-                                    ident!(left)
-                                );
-
-                                wrapper.push(assign);
-                            }
-                            Expr::Array(items) => {
-                                let declaration = var!(
-                                    rbtype!(POINTER, I64),
-                                    name!(left.clone())
-                                );
-                                wrapper.push(declaration);
-
-                                let bytes = alloc!(
-                                    rbtype!(I64),
-                                    immediate!(SIGNED(items.len() as i64)),
-                                    ident!(left.clone())
-                                );
-                                wrapper.push(bytes);
-
-                                let mut i = 0;
-                                while i < items.len() {
-                                    let res = match &items[i] {
-                                        Expr::Identifier(name) => name.clone(),
-                                        Expr::BinOp(_, _, _) => {
-                                            eval(vec![items[i].clone()], wrapper);
-                                            "temp".to_string() // LLVM save me
-                                        },
-                                        Expr::CallFunc(_, _) => {
-                                            eval(vec![items[i].clone()], wrapper);
-                                            "temp".to_string()
-                                        },
-                                        Expr::Number(n) => {
-                                            let bytes = mov!(immediate!(SIGNED(*n)), ident!("temp".to_string()));
-                                            wrapper.push(bytes);
-                                            "temp".to_string()
-                                        }
-                                        _ => todo!()
-                                    };
-
-                                    let bytes = pmov!(
-                                        ident!(res.clone()),
-                                        ident!(left.clone()),
-                                        immediate!(SIGNED(i as i64))
-                                    );
-                                    wrapper.push(bytes);
-
-                                    i += 1;
-                                }
                             }
                             _ => todo!()
-                        }
-                    },
-                    Operator::Assign => {
-                        let left = match *left.clone() {
-                            Expr::Identifier(name) => name.clone(),
-                            _ => panic!("wtf")
                         };
 
-                        match *right.clone() {
-                            Expr::Number(n) => {
-                                let assign = mov!(
-                                    immediate!(SIGNED(n)),
-                                    ident!(left)
-                                );
-
-                                wrapper.push(assign);
-                            },
-                            _ => todo!()
-                        }
+                        wrapper.push(bytes);
                     }
-                    _ => todo!()
+                    (Expr::Number(l), Expr::Identifier(r)) => {
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                immediate!(SIGNED(l)),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                immediate!(SIGNED(l)),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                immediate!(SIGNED(l)),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                immediate!(SIGNED(l)),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::Number(l), _) => {
+                        eval(vec![*right.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                immediate!(SIGNED(l)),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                immediate!(SIGNED(l)),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                immediate!(SIGNED(l)),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                immediate!(SIGNED(l)),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::Identifier(l), Expr::Number(r)) => {
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!(l.clone()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!(l.clone()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!(l.clone()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!(l.clone()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Assign => {
+                                mov!(
+                                    immediate!(SIGNED(r)),
+                                    ident!(l.to_string())
+                                )
+                            }
+                            Operator::Declare => {
+                                let bytes = var!(
+                                    Value::TYPE(vec![Type::I64]),
+                                    Value::NAME(l.to_string())
+                                );
+                                wrapper.push(bytes);
+
+                                mov!(
+                                    immediate!(SIGNED(r)),
+                                    ident!(l.to_string())
+                                )
+
+                            }
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::Identifier(l), Expr::Identifier(r)) => {
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!(l.clone()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!(l.clone()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!(l.clone()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!(l.clone()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Assign => {
+                                mov!(
+                                    ident!(r.clone()),
+                                    ident!(l.clone())
+                                )
+                            }
+                            Operator::Declare => {
+                                let bytes = var!(
+                                    Value::TYPE(vec![Type::I64]),
+                                    Value::NAME(l.to_string())
+                                );
+                                wrapper.push(bytes);
+
+                                mov!(
+                                    ident!(r.clone()),
+                                    ident!(l.clone())
+                                )
+                            }
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::Identifier(l), _) => {
+                        eval(vec![*right.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!(l.clone()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!(l.clone()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!(l.clone()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!(l.clone()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Assign => {
+                                mov!(
+                                    ident!("temp".to_string()),
+                                    ident!(l.clone())
+                                )
+                            }
+                            Operator::Declare => {
+                                let bytes = var!(
+                                    Value::TYPE(vec![Type::I64]),
+                                    Value::NAME(l.to_string())
+                                );
+                                wrapper.push(bytes);
+
+                                mov!(
+                                    ident!("temp".to_string()),
+                                    ident!(l.clone())
+                                )
+                            }
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::BinOp(_, _, _), Expr::Number(r)) => {
+                        eval(vec![*left.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!("temp".to_string()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!("temp".to_string()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!("temp".to_string()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!("temp".to_string()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::BinOp(_, _, _), Expr::Identifier(r)) => {
+                        eval(vec![*left.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!("temp".to_string()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!("temp".to_string()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!("temp".to_string()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!("temp".to_string()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::BinOp(_, _, _), _) => {
+                        eval(vec![*left.clone()], wrapper);
+
+                        let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
+                        wrapper.push(bytes);
+
+                        eval(vec![*right.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::CallFunc(_, _), Expr::Number(r)) => {
+                        eval(vec![*left.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!("temp".to_string()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!("temp".to_string()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!("temp".to_string()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!("temp".to_string()),
+                                immediate!(SIGNED(r)),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::CallFunc(_, _), Expr::Identifier(r)) => {
+                        eval(vec![*left.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!("temp".to_string()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!("temp".to_string()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!("temp".to_string()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!("temp".to_string()),
+                                ident!(r.clone()),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::CallFunc(_, _), _) => {
+                        eval(vec![*left.clone()], wrapper);
+
+                        let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
+                        wrapper.push(bytes);
+
+                        eval(vec![*right.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::ArrayAccess(_, _), Expr::Number(r)) => {
+                        eval(vec![*left.clone()], wrapper);
+
+                        let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
+                        wrapper.push(bytes);
+
+                        eval(vec![*right.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::ArrayAccess(_, _), Expr::Identifier(r)) => {
+                        eval(vec![*left.clone()], wrapper);
+
+                        let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
+                        wrapper.push(bytes);
+
+                        eval(vec![*right.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    (Expr::ArrayAccess(_, _), _) => {
+                        eval(vec![*left.clone()], wrapper);
+
+                        let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
+                        wrapper.push(bytes);
+
+                        eval(vec![*right.clone()], wrapper);
+
+                        let bytes = match op {
+                            Operator::Add => add!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Subtract => sub!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Multiply => mul!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            Operator::Divide => div!(
+                                ident!("temp2".to_string()),
+                                ident!("temp".to_string()),
+                                ident!("temp".to_string())
+                            ),
+                            _ => todo!()
+                        };
+
+                        wrapper.push(bytes);
+                    }
+                    _ => {
+                        todo!("Unhandled binary operation: {:#?}\n{:#?}\n{:#?}", op, left, right);
+                    }
                 }
             },
 
