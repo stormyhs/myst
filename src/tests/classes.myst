@@ -13,4 +13,3 @@ class Person {
 
 let person = new Person();
 person.info();
-

@@ -123,8 +123,6 @@ pub fn tokenize(source: String) -> Vec<Token> {
                     let last = tokens.pop().unwrap();
                     match last {
                         Token::Slash => {
-                            tokens.push(last);
-                            tokens.push(Token::Slash);
                             if slash_in_line {
                                 in_comment = true;
                             }
@@ -317,9 +315,7 @@ pub fn tokenize(source: String) -> Vec<Token> {
                         Token::Star => {
                             in_multiline_comment = true;
                         },
-                        _ => {
-                            new_tokens.push(tokens[i].clone());
-                        }
+                        _ => { }
                     }
                 }
             },
@@ -330,12 +326,10 @@ pub fn tokenize(source: String) -> Vec<Token> {
                             in_multiline_comment = false;
                             i += 1;
                         },
-                        _ => {
-                            new_tokens.push(tokens[i].clone());
-                        }
+                        _ => { }
                     }
                 }
-            },
+            }
             _ => {
                 if !in_multiline_comment {
                     new_tokens.push(tokens[i].clone());
