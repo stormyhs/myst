@@ -40,7 +40,6 @@ fn main() {
             },
             _ => {
                 source = arg;
-                println!("Source file: {}", source);
             }
         }
 
