@@ -234,7 +234,6 @@ impl Parser {
             _ => {}
         }
 
-        println!("Parsed call: {:?}", result);
         return result;
     }
 
