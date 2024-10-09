@@ -18,6 +18,7 @@ fn main() {
     let mut running_tests = false;
     let mut source = String::new();
     let mut output_path = String::new();
+    let mut parse_only = false;
 
     let mut i = 0;
     while i < args.len() {
@@ -37,6 +38,9 @@ fn main() {
                 output_path = args[i + 1].clone();
                 println!("Output path: {}", output_path);
                 i += 1;
+            },
+            "--no-build" | "-n" => {
+                parse_only = true;
             },
             _ => {
                 source = arg;
@@ -73,6 +77,10 @@ fn main() {
     let ast = parser.parse();
     if debug_mode {
         println!("\n\nAST: {:#?}", ast);
+    }
+
+    if parse_only {
+        return;
     }
 
     let mut wrapper = Wrapper::new();
