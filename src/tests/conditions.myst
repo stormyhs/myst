@@ -7,12 +7,4 @@ if 1 {
     println("i dont run");
 }
 
-let test = 1;
 
-if 0 {
-    println("i dont run");
-} else if 2 {
-    println("i dont run");
-} else {
-    println("i run");
-}

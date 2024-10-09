@@ -44,8 +44,6 @@ fn main() {
             }
         }
 
-        println!("{}", i);
-
         i += 1;
     }
 
@@ -79,11 +77,19 @@ fn main() {
     }
 
     let mut wrapper = Wrapper::new();
+
     let create_var_bytes = var!(
-        Value::TYPE(vec![Type::I16]),
+        Value::TYPE(vec![Type::I64]),
         Value::NAME("temp".to_string())
     );
     wrapper.push(create_var_bytes);
+
+    let create_var_bytes = var!(
+        Value::TYPE(vec![Type::I64]),
+        Value::NAME("temp2".to_string())
+    );
+    wrapper.push(create_var_bytes);
+
     engine::eval(ast, &mut wrapper);
 
     if debug_mode {

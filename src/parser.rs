@@ -74,7 +74,6 @@ impl Parser {
         };
 
         let body = self.parse_block();
-        println!("Parsed class body: {:?}", body);
 
         let result = Expr::DecClass(
             name,
@@ -217,16 +216,14 @@ impl Parser {
                     break;
                 },
                 _ => {
-                    println!("1");
                     let arg = self.parse_expression();
-                    println!("2");
                     args.push(arg);
                 }
             }
         }
 
         let result = Expr::CallFunc(
-            name,
+            Box::new(Expr::Identifier(name)),
             Box::new(args)
         );
 
@@ -237,7 +234,47 @@ impl Parser {
             _ => {}
         }
 
+        println!("Parsed call: {:?}", result);
         return result;
+    }
+
+    fn parse_args(&mut self) -> Vec<Expr> {
+        self.advance(); // Consume `(`
+
+        let mut args = vec![];
+        loop {
+            let token = self.peek();
+            match token {
+                Token::RParen => {
+                    self.advance(); // Consume `)`
+                    break;
+                },
+                Token::LParen => {
+                    self.advance(); // Consume `(`
+                    continue;
+                },
+                Token::Plus => {
+                    break;
+                }
+                Token::Comma => {
+                    self.advance(); // Consume `,`
+                    continue;
+                },
+                Token::Semicolon => {
+                    self.advance(); // Consume `;`
+                    break;
+                },
+                Token::EOF => {
+                    break;
+                },
+                _ => {
+                    let arg = self.parse_expression();
+                    args.push(arg);
+                }
+            }
+        }
+
+        return args;
     }
 
     /// Parses a function declaration.
@@ -261,8 +298,6 @@ impl Parser {
             Box::new(body)
         );
 
-        println!("Parsed function: {:?}", result);
-        
         return result;
     }
 
@@ -283,7 +318,6 @@ impl Parser {
                 },
                 _ => {
                     let statement = self.parse_statement();
-                    println!("Parsed statement: {:?}", statement);
                     block.push(statement);
                 }
             }
@@ -356,6 +390,22 @@ impl Parser {
                     Token::Semicolon => {
                         self.advance(); // Consume `;`
                     },
+                    Token::LParen => {
+                        let call_params = self.parse_args();
+                        let result = Expr::CallFunc(
+                            Box::new(Expr::ArrayAccess(ident, Box::new(index))),
+                            Box::new(call_params)
+                        );
+
+                        match self.peek() {
+                            Token::Semicolon => {
+                                self.advance(); // Consume `;`
+                            },
+                            _ => {}
+                        }
+
+                        return result;
+                    }
                     _ => { }
                 }
                 let result = Expr::ArrayAccess(ident, Box::new(index));
@@ -447,35 +497,25 @@ impl Parser {
             _ => panic!("Expected a number, string, or identifier, got {:?}", self.peek())
         };
 
-        match result {
-            Expr::CallFunc(_, _) => {
-                return result;
-            },
-            Expr::Array(_) => {
-                return result;
-            },
-            _ => { }
-        }
-
         loop {
-            let operator = self.advance();
+            let operator = self.peek();
             let operator = match operator {
                 Token::Plus => Operator::Add,
                 Token::Minus => Operator::Subtract,
                 Token::Star => Operator::Multiply,
                 Token::Slash => Operator::Divide,
-                Token::Comma => {
-                    break
-                }
-                Token::Semicolon => {
-                    break
-                },
+                Token::RParen => break,
+                Token::Comma => break,
+                Token::Semicolon => break,
                 _ => {
                     break
                 }
             };
 
-            let right = self.parse_number();
+            self.advance();
+
+            // let right = self.parse_number();
+            let right = self.parse_statement();
 
             result = Expr::BinOp(operator, Box::new(result), Box::new(right));
         }

@@ -16,7 +16,7 @@ pub enum Expr {
     For(String, Box<Expr>, Box<Vec<Expr>>),
 
     DecFunc(String, Box<Vec<String>>, Box<Vec<Expr>>),
-    CallFunc(String, Box<Vec<Expr>>),
+    CallFunc(Box<Expr>, Box<Vec<Expr>>),
 
     DecClass(String, Box<Vec<Expr>>),
     InstantiateClass(String, Box<Vec<Expr>>),

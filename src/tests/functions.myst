@@ -1,19 +1,12 @@
-import io;
 
-fn add(left, right) {
-    return left + right;
 
-    println("this shoudl never ruin");
+fn add(a, b) {
+    return a + b;
 }
 
-fn subtract(left, right) {
-    return left - right;
-}
+let result = add(
+    add(33, add(0, 1)),
+    add(30, 4) + 0
+);
 
-fn main() {
-    fn doThing() {
-        let result = add(1, 2) + subtract(3, 4);
-    }
-
-    return doThing();
-}
+return result + 1;
