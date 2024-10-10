@@ -1,11 +1,12 @@
-use ::rainbow_wrapper::rainbow_wrapper::functions::{generate_function, Arg};
-use ::rainbow_wrapper::rainbow_wrapper::wrapper::Wrapper;
-use ::rainbow_wrapper::rainbow_wrapper::types::*;
-use ::rainbow_wrapper::*;
+use rainbow_wrapper::functions::{generate_function, Arg};
+use rainbow_wrapper::wrapper::Wrapper;
+use rainbow_wrapper::types::*;
+use rainbow_wrapper::*;
 
 use crate::enums::*;
 
 pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
+
     let mut i = 0;
     while i < ast.len() {
         match &ast[i] {
@@ -52,27 +53,27 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                             Operator::Add => add!(
                                 immediate!(SIGNED(l)),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
                                 immediate!(SIGNED(l)),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
                                 immediate!(SIGNED(l)),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
                                 immediate!(SIGNED(l)),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Assign => {
                                 mov!(
                                     immediate!(SIGNED(r)),
-                                    ident!(l.to_string())
+                                    ident!(l)
                                 )
                             }
                             Operator::Declare => {
@@ -84,7 +85,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
                                 mov!(
                                     immediate!(SIGNED(r)),
-                                    ident!(l.to_string())
+                                    ident!(l)
                                 )
 
                             }
@@ -98,22 +99,22 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                             Operator::Add => add!(
                                 immediate!(SIGNED(l)),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
                                 immediate!(SIGNED(l)),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
                                 immediate!(SIGNED(l)),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
                                 immediate!(SIGNED(l)),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -126,23 +127,23 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                         let bytes = match op {
                             Operator::Add => add!(
                                 immediate!(SIGNED(l)),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
                                 immediate!(SIGNED(l)),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
                                 immediate!(SIGNED(l)),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
                                 immediate!(SIGNED(l)),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -154,39 +155,39 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                             Operator::Add => add!(
                                 ident!(l.clone()),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
                                 ident!(l.clone()),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
                                 ident!(l.clone()),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
                                 ident!(l.clone()),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Assign => {
                                 mov!(
                                     immediate!(SIGNED(r)),
-                                    ident!(l.to_string())
+                                    ident!(l)
                                 )
                             }
                             Operator::Declare => {
                                 let bytes = var!(
                                     Value::TYPE(vec![Type::I64]),
-                                    Value::NAME(l.to_string())
+                                    Value::NAME(l.clone())
                                 );
                                 wrapper.push(bytes);
 
                                 mov!(
                                     immediate!(SIGNED(r)),
-                                    ident!(l.to_string())
+                                    ident!(l)
                                 )
 
                             }
@@ -200,22 +201,22 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                             Operator::Add => add!(
                                 ident!(l.clone()),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
                                 ident!(l.clone()),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
                                 ident!(l.clone()),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
                                 ident!(l.clone()),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Assign => {
                                 mov!(
@@ -226,13 +227,13 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                             Operator::Declare => {
                                 let bytes = var!(
                                     Value::TYPE(vec![Type::I64]),
-                                    Value::NAME(l.to_string())
+                                    Value::NAME(l.clone())
                                 );
                                 wrapper.push(bytes);
 
                                 mov!(
                                     ident!(r.clone()),
-                                    ident!(l.clone())
+                                    ident!(l)
                                 )
                             }
                             _ => todo!()
@@ -246,40 +247,40 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                         let bytes = match op {
                             Operator::Add => add!(
                                 ident!(l.clone()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
                                 ident!(l.clone()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
                                 ident!(l.clone()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
                                 ident!(l.clone()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Assign => {
                                 mov!(
-                                    ident!("temp".to_string()),
+                                    ident!("temp"),
                                     ident!(l.clone())
                                 )
                             }
                             Operator::Declare => {
                                 let bytes = var!(
                                     Value::TYPE(vec![Type::I64]),
-                                    Value::NAME(l.to_string())
+                                    Value::NAME(l.clone())
                                 );
                                 wrapper.push(bytes);
 
                                 mov!(
-                                    ident!("temp".to_string()),
-                                    ident!(l.clone())
+                                    ident!("temp"),
+                                    ident!(l)
                                 )
                             }
                             _ => todo!()
@@ -292,24 +293,24 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
                         let bytes = match op {
                             Operator::Add => add!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -321,24 +322,24 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
                         let bytes = match op {
                             Operator::Add => add!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -348,31 +349,31 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                     (Expr::BinOp(_, _, _), _) => {
                         eval(vec![*left.clone()], wrapper);
 
-                        let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
+                        let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
                         wrapper.push(bytes);
 
                         eval(vec![*right.clone()], wrapper);
 
                         let bytes = match op {
                             Operator::Add => add!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -384,24 +385,24 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
                         let bytes = match op {
                             Operator::Add => add!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 immediate!(SIGNED(r)),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -413,24 +414,24 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
                         let bytes = match op {
                             Operator::Add => add!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
-                                ident!("temp".to_string()),
+                                ident!("temp"),
                                 ident!(r.clone()),
-                                ident!("temp".to_string())
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -440,31 +441,31 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                     (Expr::CallFunc(_, _), _) => {
                         eval(vec![*left.clone()], wrapper);
 
-                        let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
+                        let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
                         wrapper.push(bytes);
 
                         eval(vec![*right.clone()], wrapper);
 
                         let bytes = match op {
                             Operator::Add => add!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -474,31 +475,31 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                     (Expr::ArrayAccess(_, _), Expr::Number(r)) => {
                         eval(vec![*left.clone()], wrapper);
 
-                        let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
+                        let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
                         wrapper.push(bytes);
 
                         eval(vec![*right.clone()], wrapper);
 
                         let bytes = match op {
                             Operator::Add => add!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -508,31 +509,31 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                     (Expr::ArrayAccess(_, _), Expr::Identifier(r)) => {
                         eval(vec![*left.clone()], wrapper);
 
-                        let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
+                        let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
                         wrapper.push(bytes);
 
                         eval(vec![*right.clone()], wrapper);
 
                         let bytes = match op {
                             Operator::Add => add!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -542,31 +543,31 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                     (Expr::ArrayAccess(_, _), _) => {
                         eval(vec![*left.clone()], wrapper);
 
-                        let bytes = mov!(ident!("temp".to_string()), ident!("temp2".to_string()));
+                        let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
                         wrapper.push(bytes);
 
                         eval(vec![*right.clone()], wrapper);
 
                         let bytes = match op {
                             Operator::Add => add!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Subtract => sub!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Multiply => mul!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             Operator::Divide => div!(
-                                ident!("temp2".to_string()),
-                                ident!("temp".to_string()),
-                                ident!("temp".to_string())
+                                ident!("temp2"),
+                                ident!("temp"),
+                                ident!("temp")
                             ),
                             _ => todo!()
                         };
@@ -579,17 +580,67 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 }
             },
 
+            // NOTE: This is assuming declaration every time.
+            Expr::Array(items) => {
+                let bytes = alloc!(
+                    rbtype!(I64),
+                    immediate!(SIGNED(items.len() as i64)),
+                    ident!("temp3")
+                );
+                wrapper.push(bytes);
+
+                let mut i = 0;
+                while i < items.len() {
+                    match &items[i] {
+                        Expr::Number(n) => {
+                            let bytes = pmov!(
+                                immediate!(SIGNED(*n)),
+                                ident!("temp3"),
+                                immediate!(SIGNED(i as i64))
+                            );
+
+                            wrapper.push(bytes);
+                        },
+                        Expr::Identifier(name) => {
+                            let bytes = pmov!(
+                                ident!(name.clone()),
+                                ident!("temp3"),
+                                immediate!(SIGNED(i as i64))
+                            );
+
+                            wrapper.push(bytes);
+                        },
+                        _ => {
+                            eval(vec![items[i].clone()], wrapper);
+                            
+                            let bytes = pmov!(
+                                ident!("temp"),
+                                ident!("temp3"),
+                                immediate!(SIGNED(i as i64))
+                            );
+
+                            wrapper.push(bytes);
+                        }
+                    }
+
+                    i += 1;
+                }
+
+                let bytes = mov!(ident!("temp3"), ident!("temp"));
+                wrapper.push(bytes);
+            }
+
             Expr::ArrayAccess(name, index) => {
                 eval(vec![*index.clone()], wrapper);
 
                 let pointer = add!(
-                    ident!(name.to_string()),
-                    ident!("temp".to_string()),
-                    ident!("temp".to_string())
+                    ident!(name),
+                    ident!("temp"),
+                    ident!("temp")
                 );
                 wrapper.push(pointer);
 
-                let bytes = self::deref!(ident!("temp".to_string()), ident!("temp".to_string()));
+                let bytes = self::deref!(ident!("temp"), ident!("temp".to_string()));
                 wrapper.push(bytes);
             }
 
@@ -634,7 +685,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 while i < args.len() {
                     eval(vec![args[i].clone()], wrapper);
 
-                    let bytes = push!(ident!("temp".to_string()));
+                    let bytes = push!(ident!("temp"));
                     wrapper.push(bytes);
 
                     i += 1;
@@ -643,32 +694,38 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 let bytes = call!(name!(name));
                 wrapper.push(bytes);
 
-                let bytes = pop!(ident!("temp".to_string()));
+                let bytes = pop!(ident!("temp"));
                 wrapper.push(bytes)
             }
 
             Expr::Number(n) => {
-                let bytes = mov!(immediate!(SIGNED(*n)), ident!("temp".to_string()));
+                let bytes = mov!(immediate!(SIGNED(*n)), ident!("temp"));
                 wrapper.push(bytes);
             }
 
             Expr::Identifier(name) => {
-                let bytes = mov!(ident!(name.to_string()), ident!("temp".to_string()));
+                let bytes = mov!(ident!(name), ident!("temp".to_string()));
                 wrapper.push(bytes);
+            }
+
+            Expr::Include(name) => {
+                // Note: `push_import` does not import a module, but rather just copy-pastes it C-style.
+                // That is the reason I called it `include` and not `import`.
+                wrapper.push_import(&format!("{}.rbb", name));
             }
 
             Expr::Return(val) => {
                 eval(vec![*val.clone()], wrapper);
 
                 let return_bytes = ret!(
-                    ident!("temp".to_string())
+                    ident!("temp")
                 );
 
                 wrapper.push(return_bytes);
                 
             }
             _ => {
-                println!("Ignoring instruction: {:?}", ast[i]);
+                println!("[Engine] Ignoring instruction: {:?}", ast[i]);
             }
         }
 

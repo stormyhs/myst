@@ -1,9 +1,13 @@
 
-
+/*
 let threefourthreefive = [1, 2, 34, 35];
 
 let array = [1, 2, threefourthreefive[2] + threefourthreefive[3], 4];
 
 return array[array[1]];
+*/
 
+let array = [1, 2, 34, 35, 4];
+let array2 = [1, 2, array[2] + array[3], 4];
 
+return array2[array[1]];

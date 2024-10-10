@@ -22,6 +22,7 @@ pub enum Expr {
     InstantiateClass(String, Box<Vec<Expr>>),
 
     Import(String),
+    Include(String),
 
     Return(Box<Expr>),
 }
