@@ -36,7 +36,6 @@ fn main() {
             }
             "--output" | "-o" => {
                 output_path = args[i + 1].clone();
-                println!("Output path: {}", output_path);
                 i += 1;
             },
             "--no-build" | "-n" => {
