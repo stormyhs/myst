@@ -315,7 +315,11 @@ pub fn tokenize(source: String) -> Vec<Token> {
                         Token::Star => {
                             in_multiline_comment = true;
                         },
-                        _ => { }
+                        _ => {
+                            if !in_multiline_comment {
+                                new_tokens.push(tokens[i].clone());
+                            }
+                        }
                     }
                 }
             },
@@ -326,7 +330,11 @@ pub fn tokenize(source: String) -> Vec<Token> {
                             in_multiline_comment = false;
                             i += 1;
                         },
-                        _ => { }
+                        _ => {
+                            if !in_multiline_comment {
+                                new_tokens.push(tokens[i].clone());
+                            }
+                        }
                     }
                 }
             }
