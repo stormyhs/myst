@@ -1,8 +1,9 @@
 
 
-let a = 10;
+let a = 33;
+a += 1;
 
-let b = 2;
+let b = 36; //
+b -= 1;
 
 return a * b;
-

@@ -447,10 +447,59 @@ impl Parser {
             },
             Token::Equal => {
                 self.advance(); // Consume `=`
+
                 let value = self.parse_expression();
                 self.retreat(); // `parse_expression` consumes the semicolon, but `parse_identifier` does not. This is dumb.
                 let result = Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(ident)), Box::new(value));
                 return result;
+            },
+            Token::Plus => { // Possibly an increment
+                self.advance(); // Consume `+`
+                match self.peek() {
+                    Token::Equal => {
+                        self.advance(); // Consume `=`
+                        let value = self.parse_expression();
+                        let add = Expr::BinOp(Operator::Add, Box::new(Expr::Identifier(ident.clone())), Box::new(value));
+                        let result = Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(ident)), Box::new(add));
+
+                        match self.peek() {
+                            Token::Semicolon => {
+                                self.advance(); // Consume `;`
+                            },
+                            _ => {}
+                        }
+
+                        return result;
+                    },
+                    _ => {
+                        self.retreat(); // `parse_expression` consumes the semicolon, but `parse_identifier` does not.
+                    }
+                    _ => {}
+                }
+            },
+            Token::Minus => {
+                self.advance(); // Consume `+`
+                match self.peek() {
+                    Token::Equal => {
+                        self.advance(); // Consume `=`
+                        let value = self.parse_expression();
+                        let add = Expr::BinOp(Operator::Subtract, Box::new(Expr::Identifier(ident.clone())), Box::new(value));
+                        let result = Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(ident)), Box::new(add));
+
+                        match self.peek() {
+                            Token::Semicolon => {
+                                self.advance(); // Consume `;`
+                            },
+                            _ => {}
+                        }
+
+                        return result;
+                    },
+                    _ => {
+                        self.retreat(); // `parse_expression` consumes the semicolon, but `parse_identifier` does not.
+                    }
+                    _ => {}
+                }
             },
             Token::Dot => { // Likely a property access
                 self.advance(); // Consume `.`
