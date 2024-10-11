@@ -1,4 +1,4 @@
-use rainbow_wrapper::functions::{generate_function, Arg};
+use rainbow_wrapper::functions::{generate_function, generate_scope, Arg};
 use rainbow_wrapper::wrapper::Wrapper;
 use rainbow_wrapper::types::*;
 use rainbow_wrapper::*;
@@ -6,7 +6,6 @@ use rainbow_wrapper::*;
 use crate::enums::*;
 
 pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
-
     let mut i = 0;
     while i < ast.len() {
         match &ast[i] {
@@ -191,7 +190,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 )
 
                             }
-                            _ => todo!()
+                            _ => todo!("Unhandled binary operation: {:#?}\n{:#?}\n{:#?}", op, left, right)
                         };
 
                         wrapper.push(bytes);
@@ -714,6 +713,42 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 wrapper.push_import(&format!("{}.rbb", name));
             }
 
+            Expr::If(cond, body, else_body) => {
+                eval(vec![*cond.clone()], wrapper);
+                // `temp` is the condition
+
+                // If `temp` is 0, jump to index `2`, which will be the `false` body, because this
+                // jump will be inside a wrapper scope, which will only contain two scopes: `true` and `false`.
+                let jump = jne!(
+                    ident!("temp"),
+                    immediate!(SIGNED(1)),
+                    immediate!(SIGNED(2)) // what index to jump to
+                );
+
+                // Create a new scope, which stores the `true` body
+                let mut body_wrapper = Wrapper::new();
+                eval(*body.clone(), &mut body_wrapper);
+                let true_scope = generate_scope(&body_wrapper.bytes);
+
+                // After finishing the `true` body, jump to the end of the `if` statement
+                // This it to prevent the `false` body from being executed right after the `true` body.
+                let jump_after_true = jne!(
+                    ident!("temp"),
+                    immediate!(SIGNED(1)),
+                    immediate!(SIGNED(3)) // what index to jump to
+                );
+
+                // Create a new scope, which stores the `false` body
+                let mut else_body_wrapper = Wrapper::new();
+                eval(*else_body.clone(), &mut else_body_wrapper);
+                let false_scope = generate_scope(&else_body_wrapper.bytes);
+
+                let merged_scopes = [jump, true_scope, jump_after_true, false_scope].concat();
+                let wrap = generate_scope(&merged_scopes);
+
+                wrapper.push(wrap);
+            }
+
             Expr::Return(val) => {
                 eval(vec![*val.clone()], wrapper);
 
@@ -724,6 +759,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 wrapper.push(return_bytes);
                 
             }
+
             _ => {
                 println!("[Engine] Ignoring instruction: {:?}", ast[i]);
             }

@@ -1,10 +1,11 @@
 
-
-
 if 1 {
-    println("i run");
+    if 0 {
+        return 1;
+    } else {
+        return 69;
+    }
 } else {
-    println("i dont run");
+    return 1;
 }
-
 

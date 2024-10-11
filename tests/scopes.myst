@@ -1,0 +1,11 @@
+
+
+let a = 1;
+
+fn changeA() {
+    a = 2;
+}
+
+changeA();
+
+return a;

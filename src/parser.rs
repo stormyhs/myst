@@ -97,7 +97,7 @@ impl Parser {
     /// Does consume semicolons.
     fn parse_while(&mut self) -> Expr {
         self.advance(); // Consume `while`
-        let condition = self.parse_expression();
+        let condition = self.parse_statement();
         let body = self.parse_block();
 
         let result = Expr::While(
@@ -359,6 +359,7 @@ impl Parser {
             _ => {}
         }
 
+
         return block;
     }
 
@@ -449,8 +450,9 @@ impl Parser {
                 self.advance(); // Consume `=`
 
                 let value = self.parse_expression();
-                self.retreat(); // `parse_expression` consumes the semicolon, but `parse_identifier` does not. This is dumb.
+                //self.retreat(); // `parse_expression` consumes the semicolon, but `parse_identifier` does not. This is dumb.
                 let result = Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(ident)), Box::new(value));
+
                 return result;
             },
             Token::Plus => { // Possibly an increment
@@ -461,13 +463,6 @@ impl Parser {
                         let value = self.parse_expression();
                         let add = Expr::BinOp(Operator::Add, Box::new(Expr::Identifier(ident.clone())), Box::new(value));
                         let result = Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(ident)), Box::new(add));
-
-                        match self.peek() {
-                            Token::Semicolon => {
-                                self.advance(); // Consume `;`
-                            },
-                            _ => {}
-                        }
 
                         return result;
                     },
@@ -511,6 +506,14 @@ impl Parser {
 
                 return result;
             }
+            Token::LArrow => {
+                self.advance(); // Consume `<`
+                let right = self.parse_expression();
+
+                let result = Expr::BinOp(Operator::Lesser, Box::new(Expr::Identifier(ident)), Box::new(right));
+
+                return result;
+            },
             Token::Semicolon => {
                 self.advance(); // Consume `;`
                 return Expr::Identifier(ident);
@@ -602,6 +605,13 @@ impl Parser {
             let right = self.parse_statement();
 
             result = Expr::BinOp(operator, Box::new(result), Box::new(right));
+        }
+
+        match self.peek() {
+            Token::Semicolon => {
+                self.advance(); // Consume `;`
+            },
+            _ => {}
         }
         
         return result;

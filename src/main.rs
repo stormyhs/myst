@@ -95,6 +95,13 @@ fn run_tests() {
             print!("Expected: {} - ", expected_output.to_string().green());
             println!("Got: {}", ret.to_string().red());
 
+            if output.stdout.len() > 0 {
+                print!("{}: {}", "stdout".red(), String::from_utf8_lossy(&output.stdout).green());
+            }
+            if output.stderr.len() > 0 {
+                print!("{}: {}", "stderr".red(), String::from_utf8_lossy(&output.stderr));
+            }
+
             failed += 1;
         }
     }
