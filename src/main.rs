@@ -18,6 +18,28 @@ fn get_rb_path() -> String {
     return env::var("RAINBOW_PATH").unwrap_or_else(|_| "/home/stormy/code/Rainbow/target/debug/rainbow".to_string());
 }
 
+fn run_with_rb(path: String) -> i32 {
+    let current_dir = String::from(env::current_dir().unwrap().to_str().unwrap());
+    let output = match Command::new(get_rb_path())
+        .arg(format!("{}/{}", current_dir, path))
+        .output() {
+        Ok(o) => o,
+        Err(e) => {
+            println!("❌ Could not run Rainbow: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    if output.stdout.len() > 0 {
+        print!("{}: {}", "stdout".red(), String::from_utf8_lossy(&output.stdout).green());
+    }
+    if output.stderr.len() > 0 {
+        print!("{}: {}", "stderr".red(), String::from_utf8_lossy(&output.stderr));
+    }
+
+    return output.status.code().unwrap();
+}
+
 fn run_tests() {
     println!("\nRunning tests...\n");
 
@@ -74,18 +96,7 @@ fn run_tests() {
         let output_path = "output.rbb";
         fs::write(output_path, wrapper.emit()).expect("Could not write bytecode to file");
 
-        let current_dir = String::from(env::current_dir().unwrap().to_str().unwrap());
-        let output = match Command::new(get_rb_path())
-            .arg(format!("{}/{}", current_dir, output_path))
-            .output() {
-            Ok(o) => o,
-            Err(e) => {
-                println!("❌ Could not run Rainbow: {}", e);
-                std::process::exit(1);
-            }
-        };
-
-        let ret = output.status.code().unwrap();
+        let ret = run_with_rb(output_path.to_string());
         let expected_output = 69;
 
         if ret == expected_output {
@@ -94,13 +105,6 @@ fn run_tests() {
             print!("❌ Test failed: {} - ", file.red());
             print!("Expected: {} - ", expected_output.to_string().green());
             println!("Got: {}", ret.to_string().red());
-
-            if output.stdout.len() > 0 {
-                print!("{}: {}", "stdout".red(), String::from_utf8_lossy(&output.stdout).green());
-            }
-            if output.stderr.len() > 0 {
-                print!("{}: {}", "stderr".red(), String::from_utf8_lossy(&output.stderr));
-            }
 
             failed += 1;
         }
@@ -121,7 +125,7 @@ fn main() {
     let mut running_tests = false;
     let mut source = String::new();
     let mut output_path = String::from("out.rbb");
-    let mut parse_only = false;
+    let mut no_run = false;
     let mut help = false;
 
     let mut i = 0;
@@ -142,8 +146,8 @@ fn main() {
                 output_path = args[i + 1].clone();
                 i += 1;
             },
-            "--no-build" | "-n" => {
-                parse_only = true;
+            "--no-run" | "-n" => {
+                no_run = true;
             },
             "--help" | "-h" => {
                 help = true;
@@ -162,7 +166,7 @@ fn main() {
         println!("  {} {}:          Enable debug mode", "--debug".cyan(), "-d".cyan());
         println!("  {} {}:           Run tests", "--test".cyan(), "-t".cyan());
         println!("  {} {} {}:  Specify output file", "--output".cyan(), "-o".cyan(), "<file>".green());
-        println!("  {} {}:       Do not build the output file", "--no-build".cyan(), "-n".cyan());
+        println!("  {} {}:         Do not execute the output file", "--no-run".cyan(), "-n".cyan());
         println!("  {} {}:           Display this help message", "--help".cyan(), "-h".cyan());
         println!("\nExample:");
         println!("  {} -d -o {} {}", "myst".blue(), "build.rbb".green(), "source.myst".green());
@@ -207,10 +211,6 @@ fn main() {
         println!("\n\nAST: {:#?}", ast);
     }
 
-    if parse_only {
-        return;
-    }
-
     let mut wrapper = Wrapper::new();
 
     // TODO: Use the stack instead. This is just a PoC
@@ -241,4 +241,10 @@ fn main() {
     fs::write(output_path.clone(), wrapper.emit()).expect("Could not write bytecode to file");
 
     println!("✔  Compiled to {}", output_path.green());
+
+    if !no_run {
+        let ret = run_with_rb(output_path);
+        println!("✔️ Rainbow exited with code {}", ret);
+    }
+
 }

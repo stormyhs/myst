@@ -710,7 +710,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
             Expr::Include(name) => {
                 // Note: `push_import` does not import a module, but rather just copy-pastes it C-style.
                 // That is the reason I called it `include` and not `import`.
-                wrapper.push_import(&format!("{}.rbb", name));
+                wrapper.push_import(&format!("{}", name));
             }
 
             Expr::If(cond, body, else_body) => {
