@@ -18,11 +18,14 @@ fn get_rb_path() -> String {
     return env::var("RAINBOW_PATH").unwrap_or_else(|_| "/home/stormy/code/Rainbow/target/debug/rainbow".to_string());
 }
 
-fn run_with_rb(path: String) -> i32 {
+fn run_with_rb(path: String, debug: bool) -> i32 {
     let current_dir = String::from(env::current_dir().unwrap().to_str().unwrap());
-    let output = match Command::new(get_rb_path())
-        .arg(format!("{}/{}", current_dir, path))
-        .output() {
+    let mut output = Command::new(get_rb_path());
+    output.arg(format!("{}/{}", current_dir, path));
+    if debug {
+        output.arg("--debug");
+    }
+    let output = match output.output() {
         Ok(o) => o,
         Err(e) => {
             println!("❌ Could not run Rainbow: {}", e);
@@ -31,7 +34,7 @@ fn run_with_rb(path: String) -> i32 {
     };
 
     if output.stdout.len() > 0 {
-        print!("{}: {}", "stdout".red(), String::from_utf8_lossy(&output.stdout).green());
+        print!("{}: {}", "stdout".red(), String::from_utf8_lossy(&output.stdout));
     }
     if output.stderr.len() > 0 {
         print!("{}: {}", "stderr".red(), String::from_utf8_lossy(&output.stderr));
@@ -40,14 +43,16 @@ fn run_with_rb(path: String) -> i32 {
     return output.status.code().unwrap();
 }
 
-fn run_tests() {
+fn run_tests(debug: bool) {
     println!("\nRunning tests...\n");
 
     let test_files = vec![
         "tests/vars.myst",
+        "tests/comments.myst",
         "tests/return.myst",
         "tests/imports.myst",
         "tests/functions.myst",
+        "tests/conditions.myst",
         "tests/arrays.myst",
     ];
 
@@ -96,7 +101,7 @@ fn run_tests() {
         let output_path = "output.rbb";
         fs::write(output_path, wrapper.emit()).expect("Could not write bytecode to file");
 
-        let ret = run_with_rb(output_path.to_string());
+        let ret = run_with_rb(output_path.to_string(), debug);
         let expected_output = 69;
 
         if ret == expected_output {
@@ -176,7 +181,7 @@ fn main() {
     }
 
     if running_tests {
-        run_tests();
+        run_tests(debug_mode);
         return;
     } else if source == "" {
         println!("❌ No source file provided.");
@@ -243,7 +248,7 @@ fn main() {
     println!("✔  Compiled to {}", output_path.green());
 
     if !no_run {
-        let ret = run_with_rb(output_path);
+        let ret = run_with_rb(output_path, debug_mode);
         println!("✔️ Rainbow exited with code {}", ret);
     }
 
