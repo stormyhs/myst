@@ -1,9 +1,11 @@
 
 
-let count = 1;
+let count = 15;
 
-while count {
-    count += 1;
+while count < 10 {
+    return 69;
 }
 
-return count;
+return 20;
+
+

@@ -190,6 +190,14 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 )
 
                             }
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!(l.clone()),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp2")
+                                )
+                            }
                             _ => todo!("Unhandled binary operation: {:#?}\n{:#?}\n{:#?}", op, left, right)
                         };
 
@@ -736,6 +744,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                     ident!("temp"),
                     immediate!(SIGNED(1)),
                     immediate!(SIGNED(3)) // what index to jump to
+                    //immediate!(SIGNED(2)) // infinite loop test
                 );
 
                 // Create a new scope, which stores the `false` body
@@ -749,6 +758,26 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 wrapper.push(wrap);
             }
 
+            Expr::While(cond, body) => {
+                let mut body_wrapper = Wrapper::new();
+                eval(vec![*cond.clone()], &mut body_wrapper);
+                // Evaluate the body of the loop
+                eval(*body.clone(), &mut body_wrapper);
+
+                // If the condition `temp` is `1` (true), repeat the loop
+                let repeat = je!(
+                    ident!("temp2"),
+                    immediate!(SIGNED(1)),
+                    immediate!(SIGNED(1))
+                );
+                body_wrapper.push(repeat.clone());
+
+                // Put the entire thing in a scope, so jumping to index is `1` will jump to the start of the loop
+                let body_scope = generate_scope(&body_wrapper.bytes);
+
+                wrapper.push(body_scope);
+            }
+
             Expr::Return(val) => {
                 eval(vec![*val.clone()], wrapper);
 
@@ -758,6 +787,10 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
                 wrapper.push(return_bytes);
                 
+            }
+
+            Expr::Pass => {
+                wrapper.push(nop!());
             }
 
             _ => {

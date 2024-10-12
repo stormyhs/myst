@@ -29,7 +29,7 @@ dependencies = [
 [[package]]
 name = "rainbow-wrapper"
 version = "0.1.0"
-source = "git+https://github.com/luminous-foundation/rainbow-wrapper.git#9c531222e216bcbba015c11af6e91799ce632ad1"
+source = "git+https://github.com/luminous-foundation/rainbow-wrapper.git#1027462e43e46ee45a1506cad9ddfdf8ab2d9414"
 
 [[package]]
 name = "windows-sys"

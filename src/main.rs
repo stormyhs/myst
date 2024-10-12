@@ -34,10 +34,10 @@ fn run_with_rb(path: String, debug: bool) -> i32 {
     };
 
     if output.stdout.len() > 0 {
-        print!("{}: {}", "stdout".red(), String::from_utf8_lossy(&output.stdout));
+        print!("RB {}: {}", "stdout".red(), String::from_utf8_lossy(&output.stdout));
     }
     if output.stderr.len() > 0 {
-        print!("{}: {}", "stderr".red(), String::from_utf8_lossy(&output.stderr));
+        print!("RB {}: {}", "stderr".red(), String::from_utf8_lossy(&output.stderr));
     }
 
     return output.status.code().unwrap();
