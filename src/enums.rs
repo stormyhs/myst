@@ -25,6 +25,7 @@ pub enum Expr {
     Include(String),
 
     Return(Box<Expr>),
+    Pass
 }
 
 #[derive(Debug, Clone)]
@@ -60,6 +61,8 @@ pub enum Token {
     Include,
     Class,
     Return,
+
+    Pass,
 
     EOF
 }

@@ -115,6 +115,8 @@ pub fn tokenize(source: String) -> Vec<Token> {
                 '-' => tokens.push(Token::Minus),
                 '*' => tokens.push(Token::Star),
                 '/' => {
+                    slash_in_line = true;
+
                     if tokens.len() == 0 {
                         tokens.push(Token::Slash);
                         continue;
@@ -132,8 +134,6 @@ pub fn tokenize(source: String) -> Vec<Token> {
                             tokens.push(Token::Slash);
                         }
                     }
-
-                    slash_in_line = true;
                 },
                 '=' => {
                     if tokens.len() == 0 {
@@ -236,6 +236,9 @@ pub fn tokenize(source: String) -> Vec<Token> {
                             }
                             else if s == "return" {
                                 tokens.push(Token::Return);
+                            }
+                            else if s == "pass" {
+                                tokens.push(Token::Pass);
                             }
                             else {
                                 tokens.push(Token::Identifier(s.clone()));

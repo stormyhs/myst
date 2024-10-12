@@ -408,7 +408,18 @@ impl Parser {
     /// ```
     fn parse_identifier(&mut self) -> Expr {
         let ident = match self.advance() {
-            Token::Identifier(name) => name,
+            Token::Identifier(name) => {
+                if name == "pass" {
+                    match self.peek() {
+                        Token::Semicolon => {
+                            self.advance(); // Consume `;`
+                        },
+                        _ => {}
+                    }
+                    return Expr::Pass;
+                }
+                name
+            },
             _ => panic!("Expected an identifier, got ?")
         };
 
