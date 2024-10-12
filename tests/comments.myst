@@ -1,7 +1,8 @@
 
 
-let a = 1; // let b = 2;
+let a = 34;//59123 12 3;
+//let b = 200;
+let b = 35;
 
-/*
-let c = 3;
-*/
+/*return 20;*/
+return a + b;//
