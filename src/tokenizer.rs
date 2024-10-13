@@ -195,6 +195,7 @@ pub fn tokenize(source: String) -> Vec<Token> {
                 ',' => tokens.push(Token::Comma),
                 '.' => tokens.push(Token::Dot),
                 ':' => tokens.push(Token::Colon),
+                '!' => tokens.push(Token::Not),
                 ' ' => {
                     if tokens.len() == 0 {
                         continue;

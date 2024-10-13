@@ -2,6 +2,7 @@ use std::env;
 use std::fs;
 use std::io::ErrorKind;
 use std::process::Command;
+use std::process;
 
 mod enums;
 mod tokenizer;
@@ -54,6 +55,7 @@ fn run_tests(debug: bool) {
         "tests/functions.myst",
         "tests/conditions.myst",
         "tests/arrays.myst",
+        "tests/loops.myst",
     ];
 
     let mut failed = 0;

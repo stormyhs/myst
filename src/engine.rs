@@ -86,7 +86,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                     immediate!(SIGNED(r)),
                                     ident!(l)
                                 )
-
+                            }
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    immediate!(SIGNED(l)),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    immediate!(SIGNED(l)),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    immediate!(SIGNED(l)),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    immediate!(SIGNED(l)),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    immediate!(SIGNED(l)),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    immediate!(SIGNED(l)),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
                             }
                             _ => todo!()
                         };
@@ -115,6 +162,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 ident!(r.clone()),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    immediate!(SIGNED(l)),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    immediate!(SIGNED(l)),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    immediate!(SIGNED(l)),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    immediate!(SIGNED(l)),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    immediate!(SIGNED(l)),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    immediate!(SIGNED(l)),
+                                    ident!(r),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -144,6 +239,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 ident!("temp"),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    immediate!(SIGNED(l)),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    immediate!(SIGNED(l)),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    immediate!(SIGNED(l)),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    immediate!(SIGNED(l)),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    immediate!(SIGNED(l)),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    immediate!(SIGNED(l)),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -195,7 +338,47 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                     cond!(<),
                                     ident!(l.clone()),
                                     immediate!(SIGNED(r)),
-                                    ident!("temp2")
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!(l.clone()),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!(l.clone()),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!(l.clone()),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!(l.clone()),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!(l),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
                                 )
                             }
                             _ => todo!("Unhandled binary operation: {:#?}\n{:#?}\n{:#?}", op, left, right)
@@ -241,6 +424,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 mov!(
                                     ident!(r.clone()),
                                     ident!(l)
+                                )
+                            }
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!(l.clone()),
+                                    ident!(r),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!(l.clone()),
+                                    ident!(r),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!(l.clone()),
+                                    ident!(r),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!(l.clone()),
+                                    ident!(r),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!(l.clone()),
+                                    ident!(r),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!(l),
+                                    ident!(r),
+                                    ident!("temp")
                                 )
                             }
                             _ => todo!()
@@ -290,6 +521,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                     ident!(l)
                                 )
                             }
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!(l.clone()),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!(l.clone()),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!(l.clone()),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!(l.clone()),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!(l.clone()),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!(l),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -319,6 +598,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 immediate!(SIGNED(r)),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -348,6 +675,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 ident!(r.clone()),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!("temp"),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!("temp"),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!("temp"),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!("temp"),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!("temp"),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!("temp"),
+                                    ident!(r),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -382,6 +757,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 ident!("temp"),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -411,6 +834,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 immediate!(SIGNED(r)),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!("temp"),
+                                    immediate!(SIGNED(r)),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -440,6 +911,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 ident!(r.clone()),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!("temp"),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!("temp"),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!("temp"),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!("temp"),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!("temp"),
+                                    ident!(r.clone()),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!("temp"),
+                                    ident!(r),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -474,6 +993,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 ident!("temp"),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -508,6 +1075,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 ident!("temp"),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -542,6 +1157,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 ident!("temp"),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -576,6 +1239,54 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 ident!("temp"),
                                 ident!("temp")
                             ),
+                            Operator::Lesser => {
+                                cmp!(
+                                    cond!(<),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Greater => {
+                                cmp!(
+                                    cond!(>),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::Equality => {
+                                cmp!(
+                                    cond!(==),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::GreaterEqual => {
+                                cmp!(
+                                    cond!(>=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::LesserEqual => {
+                                cmp!(
+                                    cond!(<=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
+                            Operator::NotEqual => {
+                                cmp!(
+                                    cond!(!=),
+                                    ident!("temp2"),
+                                    ident!("temp"),
+                                    ident!("temp")
+                                )
+                            }
                             _ => todo!()
                         };
 
@@ -730,7 +1441,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 let jump = jne!(
                     ident!("temp"),
                     immediate!(SIGNED(1)),
-                    immediate!(SIGNED(2)) // what index to jump to
+                    immediate!(SIGNED(3)) // what index to jump to
                 );
 
                 // Create a new scope, which stores the `true` body
@@ -740,11 +1451,8 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
                 // After finishing the `true` body, jump to the end of the `if` statement
                 // This it to prevent the `false` body from being executed right after the `true` body.
-                let jump_after_true = jne!(
-                    ident!("temp"),
-                    immediate!(SIGNED(1)),
-                    immediate!(SIGNED(3)) // what index to jump to
-                    //immediate!(SIGNED(2)) // infinite loop test
+                let jump_after_true = jmp!(
+                    immediate!(SIGNED(4)) // what index to jump to
                 );
 
                 // Create a new scope, which stores the `false` body
@@ -760,22 +1468,31 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
             Expr::While(cond, body) => {
                 let mut body_wrapper = Wrapper::new();
-                eval(vec![*cond.clone()], &mut body_wrapper);
-                // Evaluate the body of the loop
+
+                // Evaluate the condition
+                let mut cond_wrapper = Wrapper::new();
+                eval(vec![*cond.clone()], &mut cond_wrapper);
+
+
+                // If `temp` is 0, jump to the end of the `while` loop
+                let jump = jne!(
+                    ident!("temp"),
+                    immediate!(SIGNED(1)),
+                    immediate!(SIGNED(4)) // what index to jump to
+                );
+
+                // Evaluate the body
                 eval(*body.clone(), &mut body_wrapper);
 
-                // If the condition `temp` is `1` (true), repeat the loop
-                let repeat = je!(
-                    ident!("temp2"),
-                    immediate!(SIGNED(1)),
-                    immediate!(SIGNED(1))
+                // Jump back to the condition
+                let jump_back = jmp!(
+                    immediate!(SIGNED(0))
                 );
-                body_wrapper.push(repeat.clone());
 
-                // Put the entire thing in a scope, so jumping to index is `1` will jump to the start of the loop
-                let body_scope = generate_scope(&body_wrapper.bytes);
+                let merged_scopes = [generate_scope(&cond_wrapper.bytes), jump, generate_scope(&body_wrapper.bytes), jump_back].concat();
+                let wrap = generate_scope(&merged_scopes);
 
-                wrapper.push(body_scope);
+                wrapper.push(wrap);
             }
 
             Expr::Return(val) => {

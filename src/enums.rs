@@ -32,6 +32,8 @@ pub enum Expr {
 pub enum Operator {
     Add, Subtract, Multiply, Divide,
     Equality, Lesser, Greater,
+    LesserEqual, GreaterEqual,
+    NotEqual,
     Declare, Assign
 }
 
@@ -43,7 +45,7 @@ pub enum Token {
     LArrow, RArrow,
     Plus, Minus, Star, Slash,
     Semicolon, Comma, Dot, Colon,
-    Equal, Equality,
+    Equal, Equality, Not,
 
     String(String),
     Number(i64),

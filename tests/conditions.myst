@@ -1,9 +1,16 @@
 
+let a = 10;
+let b = 20;
+
 if 1 {
     if 0 {
         return 1;
     } else {
-        return 69;
+        if a < b {
+            if b != 25 {
+                return 69;
+            }
+        }
     }
 } else {
     return 1;

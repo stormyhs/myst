@@ -1,11 +1,20 @@
 
 
-let count = 15;
 
-while count < 10 {
+let i = 0;
+
+while i < 69 + 20 {
+    i += 1;
+}
+
+fn get_69() {
     return 69;
 }
 
-return 20;
+while i > get_69() {
+    i -= 1;
+}
+
+return i;
 
 
