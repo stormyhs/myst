@@ -23,9 +23,14 @@ fn run_with_rb(path: String, debug: bool) -> i32 {
     let current_dir = String::from(env::current_dir().unwrap().to_str().unwrap());
     let mut output = Command::new(get_rb_path());
     output.arg(format!("{}/{}", current_dir, path));
+
+    output.arg("-l");
+    output.arg("/home/stormy/code/Rainbow/std");
+
     if debug {
         output.arg("--debug");
     }
+
     let output = match output.output() {
         Ok(o) => o,
         Err(e) => {
@@ -35,7 +40,7 @@ fn run_with_rb(path: String, debug: bool) -> i32 {
     };
 
     if output.stdout.len() > 0 {
-        print!("RB {}: {}", "stdout".red(), String::from_utf8_lossy(&output.stdout));
+        print!("{}", String::from_utf8_lossy(&output.stdout));
     }
     if output.stderr.len() > 0 {
         print!("RB {}: {}", "stderr".red(), String::from_utf8_lossy(&output.stderr));

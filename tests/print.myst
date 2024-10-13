@@ -1,0 +1,4 @@
+include "io.rbb";
+
+io_println("Hello, world!");
+

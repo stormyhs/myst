@@ -1046,7 +1046,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
                         wrapper.push(bytes);
                     }
-                    (Expr::ArrayAccess(_, _), Expr::Number(r)) => {
+                    (Expr::ArrayAccess(_, _), Expr::Number(_)) => {
                         eval(vec![*left.clone()], wrapper);
 
                         let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
@@ -1128,7 +1128,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
                         wrapper.push(bytes);
                     }
-                    (Expr::ArrayAccess(_, _), Expr::Identifier(r)) => {
+                    (Expr::ArrayAccess(_, _), Expr::Identifier(_)) => {
                         eval(vec![*left.clone()], wrapper);
 
                         let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
@@ -1401,10 +1401,23 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 // Evaluate the arguments
                 let mut i = 0;
                 while i < args.len() {
-                    eval(vec![args[i].clone()], wrapper);
-
-                    let bytes = push!(ident!("temp"));
-                    wrapper.push(bytes);
+                    match &args[i] {
+                        Expr::Number(n) => {
+                            wrapper.push(push!(immediate!(SIGNED(*n))));
+                        }
+                        Expr::Identifier(name) => {
+                            wrapper.push(push!(ident!(name.clone())));
+                        }
+                        Expr::String(s) => {
+                            eval(vec![args[i].clone()], wrapper);
+                        }
+                        _ => {
+                            // arg is stored in `temp`
+                            eval(vec![args[i].clone()], wrapper);
+                            let bytes = push!(ident!("temp"));
+                            wrapper.push(bytes);
+                        }
+                    }
 
                     i += 1;
                 }
@@ -1419,6 +1432,13 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
             Expr::Number(n) => {
                 let bytes = mov!(immediate!(SIGNED(*n)), ident!("temp"));
                 wrapper.push(bytes);
+            }
+
+            Expr::String(s) => {
+                wrapper.push_string(&s);
+                wrapper.push(push!(ident!(s.clone())));
+
+                wrapper.push(push!(immediate!(UNSIGNED(s.len()))));
             }
 
             Expr::Identifier(name) => {
