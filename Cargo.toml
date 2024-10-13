@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 colored = "2.1.0"
 rainbow-wrapper = { git = "https://github.com/luminous-foundation/rainbow-wrapper.git" }
+ureq = {version="2.10.1", features=["socks-proxy"]}

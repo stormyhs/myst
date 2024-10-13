@@ -4,6 +4,13 @@ use std::io::ErrorKind;
 use std::process::Command;
 use std::process;
 
+use ureq;
+use ureq::Agent;
+
+use std::io;
+
+use std::fs::File;
+
 mod enums;
 mod tokenizer;
 mod parser;
@@ -14,6 +21,46 @@ use rainbow_wrapper::types::*;
 use rainbow_wrapper::var;
 
 use colored::*;
+
+fn fetch_package(name: String) {
+    println!("📦 Fetching package '{}' from MPR...", name);
+
+    let url = match std::env::var("MYST_REGISTRY") {
+        Ok(u) => u,
+        Err(_) => {
+            println!("❌ MYST_REGISTRY not set. This probably means the MPR is not publicly available.");
+            process::exit(1);
+        }
+    };
+    let proxy = std::env::var("MYST_PROXY").unwrap_or_else(|_| "".to_string());
+    let secret = std::env::var("MYST_SECRET").unwrap_or_else(|_| "".to_string());
+
+    let ureq_proxy = ureq::Proxy::new(proxy).unwrap();
+    let agent = ureq::AgentBuilder::new().proxy(ureq_proxy).build();
+
+    let full_url = format!("{}/api/lib/{}", url, name);
+    let response = match agent.get(&full_url).set("secret", &secret).call() {
+        Ok(r) => r,
+        Err(ureq::Error::Status(code, response)) => {
+            if code == 404 {
+                println!("❌ Package '{}' not found", name);
+            } else {
+                println!("❌ Could not fetch package: {}", response.into_string().unwrap());
+            }
+            process::exit(1);
+        }
+        Err(e) => {
+            println!("❌ Could not fetch package: {}", e);
+            process::exit(1);
+        }
+    };
+    // Write the bytes to a file
+    let mut file = File::create(format!("{}", name)).unwrap();
+    let mut reader = response.into_reader();
+    io::copy(&mut reader, &mut file).unwrap();
+
+    println!("✔  Fetched package '{}'", name);
+}
 
 fn get_rb_path() -> String {
     return env::var("RAINBOW_PATH").unwrap_or_else(|_| "/home/stormy/code/Rainbow/target/debug/rainbow".to_string());
@@ -164,6 +211,10 @@ fn main() {
             "--help" | "-h" => {
                 help = true;
             },
+            "install" => {
+                fetch_package(args[i + 1].clone());
+                return;
+            },
             _ => {
                 source = arg;
             }
@@ -180,6 +231,7 @@ fn main() {
         println!("  {} {} {}:  Specify output file", "--output".cyan(), "-o".cyan(), "<file>".green());
         println!("  {} {}:         Do not execute the output file", "--no-run".cyan(), "-n".cyan());
         println!("  {} {}:           Display this help message", "--help".cyan(), "-h".cyan());
+        println!("  {} {}:   Install a package from the MPR", "install".cyan(), "<package>".green());
         println!("\nExample:");
         println!("  {} -d -o {} {}", "myst".blue(), "build.rbb".green(), "source.myst".green());
         println!("  {} {} -d", "myst".blue(), "source.myst".green());
