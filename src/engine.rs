@@ -1,4 +1,4 @@
-use rainbow_wrapper::functions::{generate_function, generate_scope, Arg};
+use rainbow_wrapper::generation::{generate_function, generate_scope, Arg};
 use rainbow_wrapper::wrapper::Wrapper;
 use rainbow_wrapper::types::*;
 use rainbow_wrapper::*;
