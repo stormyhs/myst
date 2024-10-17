@@ -1446,9 +1446,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 wrapper.push(bytes);
             }
 
-            Expr::Include(name) => {
-                // Note: `push_import` does not import a module, but rather just copy-pastes it C-style.
-                // That is the reason I called it `include` and not `import`.
+            Expr::Import(name) => {
                 wrapper.push_import(&format!("{}", name));
             }
 
@@ -1528,6 +1526,51 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
 
             Expr::Pass => {
                 wrapper.push(nop!());
+            }
+
+            Expr::PropertyAccess(item, prop) => {
+                let item = match *item.clone() {
+                    Expr::Identifier(name) => name.clone(),
+                    _ => panic!("Expected identifier, got {:?}", item)
+                };
+                let prop = match *prop.clone() {
+                    Expr::Identifier(name) => name.clone(),
+                    Expr::CallFunc(name, args) => {
+                        let mut i = 0;
+                        while i < args.len() {
+                            match &args[i] {
+                                Expr::Number(n) => {
+                                    wrapper.push(push!(immediate!(SIGNED(*n))));
+                                }
+                                Expr::Identifier(name) => {
+                                    wrapper.push(push!(ident!(name.clone())));
+                                }
+                                Expr::String(s) => {
+                                    eval(vec![args[i].clone()], wrapper);
+                                }
+                                _ => {
+                                    // arg is stored in `temp`
+                                    eval(vec![args[i].clone()], wrapper);
+                                    let bytes = push!(ident!("temp"));
+                                    wrapper.push(bytes);
+                                }
+                            }
+
+                            i += 1;
+                        }
+
+                        let name = match *name.clone() {
+                            Expr::Identifier(name) => name.clone(),
+                            _ => panic!("Execpectedeeeted identified, got {:?}", name)
+                        };
+
+                        name
+                    },
+                    _ => panic!("Expected Identifier or CallFunc, got {:?}", prop)
+                };
+
+                let bytes = call!(name!(format!("{}.{}", item, prop)));
+                wrapper.push(bytes);
             }
 
             _ => {

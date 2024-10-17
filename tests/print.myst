@@ -1,4 +1,4 @@
-include "io.rbb";
+import "io.rbb";
 
-io_println("Hello, world!");
+io.println("Hello, world!");
 

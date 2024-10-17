@@ -1,4 +1,4 @@
-include "/home/stormy/code/myst/lib/import_me.rbb";
+import "/home/stormy/code/myst/lib/import_me.rbb";
 
 let add_res = add(34, 35);
 

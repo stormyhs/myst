@@ -145,7 +145,7 @@ checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 [[package]]
 name = "rainbow-wrapper"
 version = "0.1.0"
-source = "git+https://github.com/luminous-foundation/rainbow-wrapper.git#68d4c7ad4fb5df058828e385f0a645297344c2f6"
+source = "git+https://github.com/luminous-foundation/rainbow-wrapper.git#0957d402e20d7a6b05d4b47d6be375215be1af16"
 
 [[package]]
 name = "ring"

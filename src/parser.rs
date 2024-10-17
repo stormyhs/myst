@@ -59,8 +59,8 @@ impl Parser {
             Token::Number(_) => {
                 self.parse_number()
             },
-            Token::Include => {
-                self.parse_include()
+            Token::Import => {
+                self.parse_import()
             },
             Token::Class => {
                 self.parse_class()
@@ -167,14 +167,14 @@ impl Parser {
     /// Parses an import statement.
     ///
     /// Does consume semicolons.
-    fn parse_include(&mut self) -> Expr {
+    fn parse_import(&mut self) -> Expr {
         self.advance(); // Consume `import`
         let name = match self.advance() {
             Token::String(name) => name,
-            _ => panic!("Expected an identifier for include, got {:?}", self.peek())
+            _ => panic!("Expected an identifier for import, got {:?}", self.peek())
         };
 
-        let result = Expr::Include(name);
+        let result = Expr::Import(name);
 
         match self.peek() {
             Token::Semicolon => {
