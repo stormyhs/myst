@@ -2,6 +2,7 @@ use crate::enums::*;
 
 pub struct Parser {
     tokens: Vec<Token>,
+    expressions: Vec<Expr>,
     current: usize
 }
 
@@ -9,7 +10,8 @@ impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self {
             tokens,
-            current: 0
+            current: 0,
+            expressions: vec![]
         }
     }
 
@@ -17,13 +19,12 @@ impl Parser {
     ///
     /// This is the main entry point for the parser.
     pub fn parse(&mut self) -> Vec<Expr> {
-        let mut expressions = vec![];
         while self.current < self.tokens.len() {
             let expr = self.parse_statement();
-            expressions.push(expr);
+            self.expressions.push(expr);
         }
 
-        return expressions;
+        return self.expressions.clone();
     }
 
     /// Parses any statement, whatsoever it may be, by calling the appropriate function.
@@ -32,6 +33,21 @@ impl Parser {
     fn parse_statement(&mut self) -> Expr {
         let token = self.peek();
         match token {
+            Token::Plus | Token::Minus | Token::Star | Token::Slash | Token::RParen | Token::Comma | Token::Semicolon => {
+                self.retreat();
+                self.expressions.pop().unwrap();
+                self.parse_expression()
+            },
+            Token::Not | Token::LArrow | Token::RArrow | Token::Equality => {
+                self.parse_comparison()
+            }
+            Token::Equal => {
+                self.parse_assignment()
+            },
+            Token::Dot => {
+                self.advance(); // Consume `.`
+                return self.parse_dot();
+            },
             Token::Let => {
                 self.parse_declaration()
             },
@@ -129,6 +145,109 @@ impl Parser {
         );
 
         return result;
+    }
+
+    /// Parses comparisons, such as `==`, `!=`, `>`, `<`, `>=`, `<=`.
+    fn parse_comparison(&mut self) -> Expr {
+
+        let left = self.expressions.pop().unwrap();
+
+        match self.peek() {
+            Token::Not => {
+                self.advance(); // Consume `!`
+                
+                match self.peek() {
+                    Token::Equal => {
+                        self.advance(); // Consume `=`
+                        let right = self.parse_expression();
+
+                        let result = Expr::BinOp(
+                            Operator::NotEqual,
+                            Box::new(left),
+                            Box::new(right)
+                        );
+
+                        return result;
+                    },
+                    _ => {
+                        panic!("Expected `!=`, got {:?}", self.peek());
+                    }
+                }
+            },
+            Token::Equality => {
+                self.advance(); // Consume `=`
+                let right = self.parse_expression();
+
+                let result = Expr::BinOp(
+                    Operator::Equality,
+                    Box::new(left),
+                    Box::new(right)
+                );
+
+                return result;
+            },
+            Token::LArrow => { // <
+                self.advance(); // Consume `<`
+
+                match self.peek() {
+                    Token::Equal => {
+                        self.advance(); // Consume `=`
+                        let right = self.parse_expression();
+
+                        let result = Expr::BinOp(
+                            Operator::LesserEqual,
+                            Box::new(left),
+                            Box::new(right)
+                        );
+
+                        return result;
+                    },
+                    _ => {}
+                }
+
+                let right = self.parse_expression();
+
+                let result = Expr::BinOp(
+                    Operator::Lesser,
+                    Box::new(left),
+                    Box::new(right)
+                );
+
+                return result;
+            },
+            Token::RArrow => { // >
+                self.advance(); // Consume `>`
+
+                match self.peek() {
+                    Token::Equal => {
+                        self.advance(); // Consume `=`
+                        let right = self.parse_expression();
+
+                        let result = Expr::BinOp(
+                            Operator::GreaterEqual,
+                            Box::new(left),
+                            Box::new(right)
+                        );
+
+                        return result;
+                    },
+                    _ => {}
+                }
+
+                let right = self.parse_expression();
+
+                let result = Expr::BinOp(
+                    Operator::Greater,
+                    Box::new(left),
+                    Box::new(right)
+                );
+
+                return result;
+            },
+            _ => {
+                panic!("Expected `!=`, got {:?}", self.peek());
+            }
+        }
     }
 
     /// Parses an if statement, including else if and else.
@@ -429,167 +548,37 @@ impl Parser {
                 return self.parse_call();
             }
             Token::LBracket => {
-                self.advance(); // Consume `[`
-                let index = self.parse_expression();
-                self.advance(); // Consume `]`
-                match self.peek() {
-                    Token::Semicolon => {
-                        self.advance(); // Consume `;`
-                    },
-                    Token::LParen => {
-                        let call_params = self.parse_args();
-                        let result = Expr::CallFunc(
-                            Box::new(Expr::ArrayAccess(ident, Box::new(index))),
-                            Box::new(call_params)
-                        );
-
-                        match self.peek() {
-                            Token::Semicolon => {
-                                self.advance(); // Consume `;`
-                            },
-                            _ => {}
-                        }
-
-                        return result;
-                    }
-                    _ => { }
-                }
-                let result = Expr::ArrayAccess(ident, Box::new(index));
-                return result;
-            }
-            Token::Plus => {
-                self.advance(); // Consume `+`
-                match self.peek() {
-                    Token::Equal => {
-                        self.advance(); // Consume `=`
-                        let value = self.parse_expression();
-                        let add = Expr::BinOp(Operator::Add, Box::new(Expr::Identifier(ident.clone())), Box::new(value));
-                        let result = Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(ident)), Box::new(add));
-
-                        return result;
-                    },
-                    _ => {
-                        self.retreat(); // `parse_expression` consumes the semicolon, but `parse_identifier` does not.
-                    }
-                    _ => {}
-                }
-            }
-            Token::Minus => {
-                self.advance(); // Consume `+`
-                match self.peek() {
-                    Token::Equal => {
-                        self.advance(); // Consume `=`
-                        let value = self.parse_expression();
-                        let add = Expr::BinOp(Operator::Subtract, Box::new(Expr::Identifier(ident.clone())), Box::new(value));
-                        let result = Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(ident)), Box::new(add));
-
-                        match self.peek() {
-                            Token::Semicolon => {
-                                self.advance(); // Consume `;`
-                            },
-                            _ => {}
-                        }
-
-                        return result;
-                    },
-                    _ => {
-                        self.retreat(); // `parse_expression` consumes the semicolon, but `parse_identifier` does not.
-                    }
-                    _ => {}
-                }
-            }
-            Token::Dot => {
-                self.advance(); // Consume `.`
-                let property = self.parse_expression();
-                let result = Expr::PropertyAccess(
-                    Box::new(Expr::Identifier(ident)),
-                    Box::new(property)
-                );
-
-                return result;
+                self.retreat(); // `parse_array_access` requires the identifier to be the current token.
+                return self.parse_array_access();
             }
             Token::Semicolon => {
                 self.advance(); // Consume `;`
                 return Expr::Identifier(ident);
             }
-            Token::Equality => {
-                self.advance(); // Consume `==`
-                let right = self.parse_expression();
-
-                let result = Expr::BinOp(Operator::Equality, Box::new(Expr::Identifier(ident)), Box::new(right));
-
-                return result;
-            }
-            Token::Equal => {
-                self.advance(); // Consume `=`
-                let right = self.parse_expression();
-
-                let result = Expr::BinOp(Operator::Assign, Box::new(Expr::Identifier(ident)), Box::new(right));
-
-                return result;
-            }
-            Token::LArrow => {
-                self.advance(); // Consume `<`
-
-                match self.peek() {
-                    Token::Equal => {
-                        self.advance(); // Consume `=`
-                        let right = self.parse_expression();
-
-                        let result = Expr::BinOp(Operator::LesserEqual, Box::new(Expr::Identifier(ident)), Box::new(right));
-
-                        return result;
-                    },
-                    _ => {}
-                }
-
-                let right = self.parse_expression();
-
-                let result = Expr::BinOp(Operator::Lesser, Box::new(Expr::Identifier(ident)), Box::new(right));
-
-                return result;
-            }
-            Token::RArrow => {
-                self.advance(); // Consume `>`
-
-                match self.peek() {
-                    Token::Equal => {
-                        self.advance(); // Consume `=`
-                        let right = self.parse_expression();
-
-                        let result = Expr::BinOp(Operator::GreaterEqual, Box::new(Expr::Identifier(ident)), Box::new(right));
-
-                        return result;
-                    },
-                    _ => {}
-                }
-
-                let right = self.parse_expression();
-
-                let result = Expr::BinOp(Operator::Greater, Box::new(Expr::Identifier(ident)), Box::new(right));
-
-                return result;
-            }
-            Token::Not => {
-                self.advance(); // Consume `!`
-                match self.peek() {
-                    Token::Equal => {
-                        self.advance(); // Consume `=`
-                        let right = self.parse_expression();
-
-                        let result = Expr::BinOp(Operator::NotEqual, Box::new(Expr::Identifier(ident)), Box::new(right));
-
-                        return result;
-                    },
-                    _ => {
-                        panic!("Expected `!=`, got {:?}", self.peek());
-                    }
-                }
-            }
             _ => {}
         }
 
         let result = Expr::Identifier(ident);
+
+        return result;
+    }
+
+    fn parse_array_access(&mut self) -> Expr {
+        let ident = match self.advance() {
+            Token::Identifier(name) => name,
+            _ => panic!("Expected an identifier, got ?")
+        };
+
+        let index = self.parse_expression();
+
+        match self.peek() {
+            Token::Semicolon => {
+                self.advance(); // Consume `;`
+            },
+            _ => {}
+        }
+
+        let result = Expr::ArrayAccess(ident, Box::new(index));
 
         return result;
     }
@@ -627,6 +616,24 @@ impl Parser {
         return result;
     }
 
+    fn parse_assignment(&mut self) -> Expr {
+        let assignee = self.expressions.pop().unwrap();
+        self.advance(); // Consume `=`
+        
+        let value = self.parse_expression();
+
+        let result = Expr::BinOp(Operator::Assign, Box::new(assignee), Box::new(value));
+
+        match self.peek() {
+            Token::Semicolon => {
+                self.advance(); // Consume `;`
+            },
+            _ => {}
+        }
+
+        return result;
+    }
+
     /// Parses an expression.
     ///
     /// Example:
@@ -649,6 +656,9 @@ impl Parser {
             Token::LBracket => {
                 self.parse_array()
             },
+            Token::RBracket => {
+                return Expr::Array(Box::new(vec![]));
+            },
             _ => panic!("Expected a number, string, or identifier, got {:?}", self.peek())
         };
 
@@ -669,7 +679,6 @@ impl Parser {
 
             self.advance();
 
-            // let right = self.parse_number();
             let right = self.parse_statement();
 
             result = Expr::BinOp(operator, Box::new(result), Box::new(right));
@@ -741,6 +750,22 @@ impl Parser {
             Token::String(value) => Expr::String(value),
             _ => panic!("Expected a string, got {:?}", token)
         };
+
+        return result;
+    }
+
+    /// Parses a property access.
+    ///
+    /// Assumes that the object we are accessing from is the last expression in `self.expressions`
+    fn parse_dot(&mut self) -> Expr {
+        let property = self.parse_expression();
+
+        let object = self.expressions.pop().unwrap();
+
+        let result = Expr::PropertyAccess(
+            Box::new(object),
+            Box::new(property)
+        );
 
         return result;
     }
