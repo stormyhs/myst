@@ -51,7 +51,7 @@ impl Parser {
                 self.parse_identifier()
             },
             Token::Func => {
-                self.parse_function()
+                self.parse_function(false)
             },
             Token::If => {
                 self.parse_conditional()
@@ -77,6 +77,9 @@ impl Parser {
             Token::String(_) => {
                 self.parse_string()
             }
+            Token::LParen => {
+                self.parse_function(true)
+            },
             _ => todo!("Token: {:?}", self.peek())
         }
     }
@@ -333,8 +336,8 @@ impl Parser {
                     break;
                 },
                 Token::LParen => {
-                    self.advance(); // Consume `(`
-                    continue;
+                    let arg = self.parse_function(true);
+                    args.push(arg);
                 },
                 Token::Plus => {
                     break;
@@ -413,12 +416,21 @@ impl Parser {
     }
 
     /// Parses a function declaration.
-    fn parse_function(&mut self) -> Expr {
-        self.advance(); // Consume `func`
-        let name = match { self.advance() } {
-            Token::Identifier(name) => name,
-            _ => panic!("Expected an identifier for function declaration, got {:?}", self.peek())
-        };
+    fn parse_function(&mut self, is_anonymous: bool) -> Expr {
+        let mut name = String::new();
+        if !is_anonymous {
+            self.advance(); // Consume `func`
+            name = match { self.advance() } {
+                Token::Identifier(name) => name,
+                _ => panic!("Expected an identifier for function declaration, got {:?}", self.peek())
+            };
+        }
+        else {
+            name = "anonymous".to_string();
+        }
+
+        println!("Parsing function {:?}", name);
+
         self.advance(); // Consume `(`
 
         let params = self.parse_params();

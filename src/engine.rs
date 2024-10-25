@@ -18,7 +18,7 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
                     Value::TYPE(vec![Type::I64])
                 }
                 MType::String => {
-                    Value::TYPE(vec![Type::STRUCT])
+                    Value::TYPE(vec![Type::POINTER, Type::U8])
                 }
                 MType::Struct => {
                     Value::TYPE(vec![Type::STRUCT])
@@ -88,14 +88,6 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
         Operator::NotEqual => cmp!(cond!(!=), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::Assign => mov!(right_macro.clone(), left_macro.clone()),
         Operator::Declare(typ) => {
-            match typ {
-                // NOTE: cope
-                MType::String | MType::Struct => {
-                    wrapper.push(pop!(ident!("temp")));
-                    wrapper.push(pop!(ident!("temp")));
-                }
-                _ => { }
-            }
             mov!(right_macro.clone(), left_macro.clone())
         }
     }
@@ -375,6 +367,24 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 }
                                 Expr::String(_s) => {
                                     eval(vec![args[j].clone()], wrapper);
+                                }
+                                Expr::PropertyAccess(obj, prop) => {
+                                    let obj = match *obj.clone() {
+                                        Expr::Identifier(name) => name.clone(),
+                                        _ => panic!("Expected identifier, got {:?}", obj)
+                                    };
+
+                                    match *prop.clone() {
+                                        Expr::Identifier(name) => {
+                                            let full_name = format!("{}.{}", obj, name);
+                                            wrapper.push(push!(ident!(full_name)));
+                                        }
+                                        _ => {
+                                            eval(vec![args[j].clone()], wrapper);
+                                            let bytes = push!(ident!("temp"));
+                                            wrapper.push(bytes);
+                                        }
+                                    }
                                 }
                                 _ => {
                                     // arg is stored in `temp`
