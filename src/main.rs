@@ -60,6 +60,7 @@ fn run_tests(debug: bool) {
         "tests/conditions.myst",
         "tests/arrays.myst",
         "tests/loops.myst",
+        "tests/types.myst",
     ];
 
     let mut failed = 0;

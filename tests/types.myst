@@ -1,0 +1,13 @@
+
+
+
+let a: Number = 33;
+a = 34;
+
+let b: Number = 36;
+b = b - 1;
+
+let c: String = "Hello, World!";
+c = "!Wello, Horld";
+
+return a + b;

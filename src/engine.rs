@@ -6,15 +6,29 @@ use rainbow_wrapper::*;
 use crate::enums::*;
 
 fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<u8> {
+    println!("gen_cmp: {:?} {:?} {:?}", op, left, right);
     match op {
-        Operator::Declare => {
+        Operator::Declare(ref typ) => {
             let name = match left {
                 Expr::Identifier(ref i) => i,
                 _ => todo!()
             };
 
+            let typ = match typ {
+                MType::Number => {
+                    Value::TYPE(vec![Type::I64])
+                }
+                MType::String => {
+                    Value::TYPE(vec![Type::STRUCT])
+                }
+                MType::Struct => {
+                    Value::TYPE(vec![Type::STRUCT])
+                }
+                _ => todo!("unhandled type: {:?}", typ)
+            };
+
             wrapper.push(var!(
-                Value::TYPE(vec![Type::I64]),
+                typ.clone(),
                 Value::NAME(name.clone().to_string())
             ));
 
@@ -35,6 +49,20 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
     let right_macro = match right {
         Expr::Number(n) => immediate!(SIGNED(n)),
         Expr::Identifier(i) => ident!(i),
+        Expr::PropertyAccess(_, ref prop) => {
+            // NOTE: This means that every time a property is a call (such as `string.new()`), it
+            // will attempt to store the result in a struct. This is because I am bad at rust.
+            match **prop {
+                Expr::CallFunc(_, _) => {
+                    eval(vec![right.clone()], wrapper);
+                    ident!("temp_struct")
+                }
+                _ => {
+                    eval(vec![right.clone()], wrapper);
+                    ident!("temp")
+                }
+            }
+        }
         _ => {
             eval(vec![right.clone()], wrapper);
             ident!("temp")
@@ -53,7 +81,7 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
         Operator::LesserEqual => cmp!(cond!(<=), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::NotEqual => cmp!(cond!(!=), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::Assign => mov!(right_macro.clone(), left_macro.clone()),
-        Operator::Declare => mov!(right_macro.clone(), left_macro.clone()),
+        Operator::Declare(typ) => mov!(right_macro.clone(), left_macro.clone()),
     }
 }
 
@@ -161,6 +189,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
             }
 
             Expr::CallFunc(name, args) => {
+                println!("CallFunc: {:?}", name);
                 let name = match *name.clone() {
                     Expr::Identifier(name) => name.clone(),
                     _ => panic!("Expected identifier, got {:?}", name)
@@ -191,9 +220,6 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 }
 
                 let bytes = call!(name!(name));
-                wrapper.push(bytes);
-
-                let bytes = pop!(ident!("temp"));
                 wrapper.push(bytes)
             }
 
@@ -339,17 +365,15 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                         let prop = match *prop.clone() {
                             Expr::Identifier(p) => p.clone(),
                             Expr::CallFunc(name, _) => {
-                                println!("[ENGINE] CallFunc in PropertyAccess");
                                 let name = match *name {
                                     Expr::Identifier(name) => name,
                                     _ => panic!("Expected identifier, got {:?}", name)
                                 };
 
-                                let bytes = call!(name!(format!("{}.{}", item, name)));
-                                wrapper.push(bytes);
-
-                                println!("[ENGINE] Pushed call for: {}.{}", item, name);
-
+                                let full_name = format!("{item}.{name}");
+                                let new_call_func = Expr::CallFunc(Box::new(Expr::Identifier(full_name)), args);
+                                println!("new_call_func: {:?}", new_call_func);
+                                eval(vec![new_call_func], wrapper);
                                 i += 1;
                                 continue;
                             }

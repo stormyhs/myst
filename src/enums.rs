@@ -5,7 +5,8 @@ pub enum MType {
     String,
     Function,
     Class,
-    Unknown
+    Struct,
+    Null, Undefined
 }
 
 #[derive(Debug, Clone)]
@@ -43,7 +44,7 @@ pub enum Operator {
     Equality, Lesser, Greater,
     LesserEqual, GreaterEqual,
     NotEqual,
-    Declare, Assign
+    Declare(MType), Assign
 }
 
 #[derive(Debug, Clone)]

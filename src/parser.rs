@@ -591,6 +591,8 @@ impl Parser {
             _ => panic!("Expected an identifier for declaration, got {:?}", self.peek())
         };
 
+        self.advance();
+
         let typ = match self.peek() {
             Token::Colon => {
                 self.advance();
@@ -601,18 +603,19 @@ impl Parser {
                             "String" => MType::String,
                             "Function" => MType::Function,
                             "Class" => MType::Class,
+                            "Struct" => MType::Struct,
+                            "Unknown" => MType::Undefined,
                             _ => {
                                 panic!("Unknown type: {:?}", name);
                             }
                         }
                     },
-                    _ => MType::Unknown
+                    _ => MType::Undefined
                 }
             }
-            _ => MType::Unknown
+            _ => MType::Undefined
         };
 
-        self.advance();
         self.advance();
 
         let mut value = self.parse_statement();
@@ -625,9 +628,8 @@ impl Parser {
             _ => {}
         }
 
-        let result = Expr::BinOp(Operator::Declare, Box::new(Expr::Identifier(name)), Box::new(value));
+        let result = Expr::BinOp(Operator::Declare(typ), Box::new(Expr::Identifier(name)), Box::new(value));
 
-        // `parse_expression` consumes the semicolon, but `parse_string` does not.
         match self.peek() {
             Token::Semicolon => {
                 self.advance(); // Consume `;`
