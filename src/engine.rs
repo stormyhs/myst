@@ -5,1297 +5,65 @@ use rainbow_wrapper::*;
 
 use crate::enums::*;
 
+fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<u8> {
+    match op {
+        Operator::Declare => {
+            let name = match left {
+                Expr::Identifier(ref i) => i,
+                _ => todo!()
+            };
+
+            wrapper.push(var!(
+                Value::TYPE(vec![Type::I64]),
+                Value::NAME(name.clone().to_string())
+            ));
+
+        }
+        _ => {}
+    }
+
+    let left_macro = match left {
+        Expr::Number(n) => immediate!(SIGNED(n)),
+        Expr::Identifier(ref i) => ident!(i),
+        _ => {
+            eval(vec![left.clone()], wrapper);
+            wrapper.push(mov!(ident!("temp"), ident!("temp2".to_string())));
+            ident!("temp2")
+        }
+    };
+
+    let right_macro = match right {
+        Expr::Number(n) => immediate!(SIGNED(n)),
+        Expr::Identifier(i) => ident!(i),
+        _ => {
+            eval(vec![right.clone()], wrapper);
+            ident!("temp")
+        }
+    };
+
+    match op {
+        Operator::Add => add!(left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::Subtract => sub!(left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::Multiply => mul!(left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::Divide => div!(left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::Lesser => cmp!(cond!(<), left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::Greater => cmp!(cond!(>), left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::Equality => cmp!(cond!(==), left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::GreaterEqual => cmp!(cond!(>=), left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::LesserEqual => cmp!(cond!(<=), left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::NotEqual => cmp!(cond!(!=), left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::Assign => mov!(right_macro.clone(), left_macro.clone()),
+        Operator::Declare => mov!(right_macro.clone(), left_macro.clone()),
+    }
+}
+
 pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
     let mut i = 0;
     while i < ast.len() {
         match &ast[i] {
             Expr::BinOp(op, left, right) => {
-                /* Number, Identifier, BinOp, CallFunc, ArrayAccess
-                *
-                * Because I am bad at rust, I'm gonna binary system this match statement.
-                * Mad? I don't care.
-                *
-                * number - number
-                * number - identifier
-                * number - binop
-                * number - callfunc
-                * number - arrayaccess
-                *
-                * identifier - number
-                * identifier - identifier
-                * identifier - binop
-                * identifier - callfunc
-                * identifier - arrayaccess
-                *
-                * binop - number
-                * binop - identifier
-                * binop - binop
-                * binop - callfunc
-                * binop - arrayaccess
-                *
-                * callfunc - number
-                * callfunc - identifier
-                * callfunc - binop
-                * callfunc - callfunc
-                * callfunc - arrayaccess
-                *
-                * arrayaccess - number
-                * arrayaccess - identifier
-                * arrayaccess - binop
-                * arrayaccess - callfunc
-                * arrayaccess - arrayaccess
-                *
-                */
-                match (*left.clone(), *right.clone()) {
-                    (Expr::Number(l), Expr::Number(r)) => {
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                immediate!(SIGNED(l)),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                immediate!(SIGNED(l)),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                immediate!(SIGNED(l)),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                immediate!(SIGNED(l)),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Assign => {
-                                mov!(
-                                    immediate!(SIGNED(r)),
-                                    ident!(l)
-                                )
-                            }
-                            Operator::Declare => {
-                                let bytes = var!(
-                                    Value::TYPE(vec![Type::I64]),
-                                    Value::NAME(l.to_string())
-                                );
-                                wrapper.push(bytes);
-
-                                mov!(
-                                    immediate!(SIGNED(r)),
-                                    ident!(l)
-                                )
-                            }
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    immediate!(SIGNED(l)),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    immediate!(SIGNED(l)),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    immediate!(SIGNED(l)),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    immediate!(SIGNED(l)),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    immediate!(SIGNED(l)),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    immediate!(SIGNED(l)),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::Number(l), Expr::Identifier(r)) => {
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                immediate!(SIGNED(l)),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                immediate!(SIGNED(l)),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                immediate!(SIGNED(l)),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                immediate!(SIGNED(l)),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    immediate!(SIGNED(l)),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    immediate!(SIGNED(l)),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    immediate!(SIGNED(l)),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    immediate!(SIGNED(l)),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    immediate!(SIGNED(l)),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    immediate!(SIGNED(l)),
-                                    ident!(r),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::Number(l), _) => {
-                        eval(vec![*right.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                immediate!(SIGNED(l)),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                immediate!(SIGNED(l)),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                immediate!(SIGNED(l)),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                immediate!(SIGNED(l)),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    immediate!(SIGNED(l)),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    immediate!(SIGNED(l)),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    immediate!(SIGNED(l)),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    immediate!(SIGNED(l)),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    immediate!(SIGNED(l)),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    immediate!(SIGNED(l)),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::Identifier(l), Expr::Number(r)) => {
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!(l.clone()),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!(l.clone()),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!(l.clone()),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!(l.clone()),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Assign => {
-                                mov!(
-                                    immediate!(SIGNED(r)),
-                                    ident!(l)
-                                )
-                            }
-                            Operator::Declare => {
-                                let bytes = var!(
-                                    Value::TYPE(vec![Type::I64]),
-                                    Value::NAME(l.clone())
-                                );
-                                wrapper.push(bytes);
-
-                                mov!(
-                                    immediate!(SIGNED(r)),
-                                    ident!(l)
-                                )
-
-                            }
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!(l.clone()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!(l.clone()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!(l.clone()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!(l.clone()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!(l.clone()),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!(l),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!("Unhandled binary operation: {:#?}\n{:#?}\n{:#?}", op, left, right)
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::Identifier(l), Expr::Identifier(r)) => {
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!(l.clone()),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!(l.clone()),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!(l.clone()),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!(l.clone()),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Assign => {
-                                mov!(
-                                    ident!(r.clone()),
-                                    ident!(l.clone())
-                                )
-                            }
-                            Operator::Declare => {
-                                let bytes = var!(
-                                    Value::TYPE(vec![Type::I64]),
-                                    Value::NAME(l.clone())
-                                );
-                                wrapper.push(bytes);
-
-                                mov!(
-                                    ident!(r.clone()),
-                                    ident!(l)
-                                )
-                            }
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!(l.clone()),
-                                    ident!(r),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!(l.clone()),
-                                    ident!(r),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!(l.clone()),
-                                    ident!(r),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!(l.clone()),
-                                    ident!(r),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!(l.clone()),
-                                    ident!(r),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!(l),
-                                    ident!(r),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::Identifier(l), _) => {
-                        eval(vec![*right.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!(l.clone()),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!(l.clone()),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!(l.clone()),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!(l.clone()),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Assign => {
-                                mov!(
-                                    ident!("temp"),
-                                    ident!(l.clone())
-                                )
-                            }
-                            Operator::Declare => {
-                                let bytes = var!(
-                                    Value::TYPE(vec![Type::I64]),
-                                    Value::NAME(l.clone())
-                                );
-                                wrapper.push(bytes);
-
-                                mov!(
-                                    ident!("temp"),
-                                    ident!(l)
-                                )
-                            }
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!(l.clone()),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!(l.clone()),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!(l.clone()),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!(l.clone()),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!(l.clone()),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!(l),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::BinOp(_, _, _), Expr::Number(r)) => {
-                        eval(vec![*left.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!("temp"),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!("temp"),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!("temp"),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!("temp"),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::BinOp(_, _, _), Expr::Identifier(r)) => {
-                        eval(vec![*left.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!("temp"),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!("temp"),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!("temp"),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!("temp"),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!("temp"),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!("temp"),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!("temp"),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!("temp"),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!("temp"),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!("temp"),
-                                    ident!(r),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::BinOp(_, _, _), _) => {
-                        eval(vec![*left.clone()], wrapper);
-
-                        let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
-                        wrapper.push(bytes);
-
-                        eval(vec![*right.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::CallFunc(_, _), Expr::Number(r)) => {
-                        eval(vec![*left.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!("temp"),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!("temp"),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!("temp"),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!("temp"),
-                                immediate!(SIGNED(r)),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!("temp"),
-                                    immediate!(SIGNED(r)),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::CallFunc(_, _), Expr::Identifier(r)) => {
-                        eval(vec![*left.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!("temp"),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!("temp"),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!("temp"),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!("temp"),
-                                ident!(r.clone()),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!("temp"),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!("temp"),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!("temp"),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!("temp"),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!("temp"),
-                                    ident!(r.clone()),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!("temp"),
-                                    ident!(r),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::CallFunc(_, _), _) => {
-                        eval(vec![*left.clone()], wrapper);
-
-                        let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
-                        wrapper.push(bytes);
-
-                        eval(vec![*right.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::ArrayAccess(_, _), Expr::Number(_)) => {
-                        eval(vec![*left.clone()], wrapper);
-
-                        let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
-                        wrapper.push(bytes);
-
-                        eval(vec![*right.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::ArrayAccess(_, _), Expr::Identifier(_)) => {
-                        eval(vec![*left.clone()], wrapper);
-
-                        let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
-                        wrapper.push(bytes);
-
-                        eval(vec![*right.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    (Expr::ArrayAccess(_, _), _) => {
-                        eval(vec![*left.clone()], wrapper);
-
-                        let bytes = mov!(ident!("temp"), ident!("temp2".to_string()));
-                        wrapper.push(bytes);
-
-                        eval(vec![*right.clone()], wrapper);
-
-                        let bytes = match op {
-                            Operator::Add => add!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Subtract => sub!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Multiply => mul!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Divide => div!(
-                                ident!("temp2"),
-                                ident!("temp"),
-                                ident!("temp")
-                            ),
-                            Operator::Lesser => {
-                                cmp!(
-                                    cond!(<),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Greater => {
-                                cmp!(
-                                    cond!(>),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::Equality => {
-                                cmp!(
-                                    cond!(==),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::GreaterEqual => {
-                                cmp!(
-                                    cond!(>=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::LesserEqual => {
-                                cmp!(
-                                    cond!(<=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            Operator::NotEqual => {
-                                cmp!(
-                                    cond!(!=),
-                                    ident!("temp2"),
-                                    ident!("temp"),
-                                    ident!("temp")
-                                )
-                            }
-                            _ => todo!()
-                        };
-
-                        wrapper.push(bytes);
-                    }
-                    _ => {
-                        todo!("Unhandled binary operation: {:#?}\n{:#?}\n{:#?}", op, left, right);
-                    }
-                }
+                let bytes = gen_cmp(op.clone(), *left.clone(), *right.clone(), wrapper);
+                wrapper.push(bytes);
             },
 
             // NOTE: This is assuming declaration every time.
@@ -1384,7 +152,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 eval(*body.clone(), &mut func_wrapper);
                 let function_bytes = func_wrapper.bytes.clone();
 
-                wrapper.merge_data(&func_wrapper); // Note: we do this because strings an sheeit are not
+                wrapper.merge_data(&func_wrapper); // Note: we do this because strings are not
                 // stored in `bytes`, but are a seperate thing. @gromton12 please fix this.
 
                 let bytes = generate_function(name, &rb_args, &vec![Type::I64], &function_bytes);
@@ -1395,7 +163,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
             Expr::CallFunc(name, args) => {
                 let name = match *name.clone() {
                     Expr::Identifier(name) => name.clone(),
-                    _ => panic!("Execpectedeeeted identified, got {:?}", name)
+                    _ => panic!("Expected identifier, got {:?}", name)
                 };
 
                 // Evaluate the arguments
@@ -1533,44 +301,69 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                     Expr::Identifier(name) => name.clone(),
                     _ => panic!("Expected identifier, got {:?}", item)
                 };
-                let prop = match *prop.clone() {
-                    Expr::Identifier(name) => name.clone(),
-                    Expr::CallFunc(name, args) => {
-                        let mut i = 0;
-                        while i < args.len() {
-                            match &args[i] {
+
+                match *prop.clone() {
+                    Expr::Identifier(name) => {
+                        let full_name = format!("{}.{}", item, name);
+                        let bytes = mov!(ident!(full_name), ident!("temp"));
+
+                        wrapper.push(bytes);
+
+                        i += 1;
+                        continue;
+                    }
+                    Expr::CallFunc(_name, args) => {
+                        let mut j = 0;
+                        while j < args.len() {
+                            match &args[j] {
                                 Expr::Number(n) => {
                                     wrapper.push(push!(immediate!(SIGNED(*n))));
                                 }
                                 Expr::Identifier(name) => {
                                     wrapper.push(push!(ident!(name.clone())));
                                 }
-                                Expr::String(s) => {
-                                    eval(vec![args[i].clone()], wrapper);
+                                Expr::String(_s) => {
+                                    eval(vec![args[j].clone()], wrapper);
                                 }
                                 _ => {
                                     // arg is stored in `temp`
-                                    eval(vec![args[i].clone()], wrapper);
+                                    eval(vec![args[j].clone()], wrapper);
                                     let bytes = push!(ident!("temp"));
                                     wrapper.push(bytes);
                                 }
                             }
 
-                            i += 1;
+                            j += 1;
                         }
 
-                        let name = match *name.clone() {
-                            Expr::Identifier(name) => name.clone(),
-                            _ => panic!("Execpectedeeeted identified, got {:?}", name)
+                        let prop = match *prop.clone() {
+                            Expr::Identifier(p) => p.clone(),
+                            Expr::CallFunc(name, _) => {
+                                println!("[ENGINE] CallFunc in PropertyAccess");
+                                let name = match *name {
+                                    Expr::Identifier(name) => name,
+                                    _ => panic!("Expected identifier, got {:?}", name)
+                                };
+
+                                let bytes = call!(name!(format!("{}.{}", item, name)));
+                                wrapper.push(bytes);
+
+                                println!("[ENGINE] Pushed call for: {}.{}", item, name);
+
+                                i += 1;
+                                continue;
+                            }
+                            _ => panic!("Expected identifier, got {:?}", prop)
                         };
 
-                        name
+                        let bytes = call!(name!(format!("{}.{}", item, prop)));
+                        wrapper.push(bytes);
+
+                        i += 1;
+                        continue;
                     },
                     _ => panic!("Expected Identifier or CallFunc, got {:?}", prop)
                 };
-
-                let bytes = call!(name!(format!("{}.{}", item, prop)));
-                wrapper.push(bytes);
             }
 
             _ => {

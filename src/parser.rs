@@ -28,14 +28,10 @@ impl Parser {
     }
 
     /// Parses any statement, whatsoever it may be, by calling the appropriate function.
-    ///
-    /// Does consume semicolons.
     fn parse_statement(&mut self) -> Expr {
         let token = self.peek();
         match token {
-            Token::Plus | Token::Minus | Token::Star | Token::Slash | Token::RParen | Token::Comma | Token::Semicolon => {
-                self.retreat();
-                self.expressions.pop().unwrap();
+            Token::Plus | Token::Minus | Token::Star | Token::Slash | Token::RParen | Token::LBracket | Token::Comma | Token::Semicolon => {
                 self.parse_expression()
             },
             Token::Not | Token::LArrow | Token::RArrow | Token::Equality => {
@@ -46,16 +42,13 @@ impl Parser {
             },
             Token::Dot => {
                 self.advance(); // Consume `.`
-                return self.parse_dot();
+                self.parse_property_access()
             },
             Token::Let => {
                 self.parse_declaration()
             },
             Token::Identifier(_name) => {
                 self.parse_identifier()
-            },
-            Token::LBracket => {
-                self.parse_expression()
             },
             Token::Func => {
                 self.parse_function()
@@ -89,8 +82,6 @@ impl Parser {
     }
 
     /// Parses a class declaration.
-    ///
-    /// Does consume semicolons.
     fn parse_class(&mut self) -> Expr {
         self.advance(); // Consume `class`
         let name = match self.advance() {
@@ -109,11 +100,9 @@ impl Parser {
     }
 
     /// Parses a while loop.
-    ///
-    /// Does consume semicolons.
     fn parse_while(&mut self) -> Expr {
         self.advance(); // Consume `while`
-        let condition = self.parse_statement();
+        let condition = self.parse_comparison();
         let body = self.parse_block();
 
         let result = Expr::While(
@@ -125,8 +114,6 @@ impl Parser {
     }
 
     /// Parses a for loop.
-    ///
-    /// Does consume semicolons.
     fn parse_for(&mut self) -> Expr {
         self.advance(); // Consume `for`
         let iterator = match self.advance() {
@@ -148,10 +135,17 @@ impl Parser {
     }
 
     /// Parses comparisons, such as `==`, `!=`, `>`, `<`, `>=`, `<=`.
+    ///
+    /// Can also parse a unary, like `1` for `true`.
     fn parse_comparison(&mut self) -> Expr {
+        let left = match self.peek() {
+            Token::String(value) => Expr::String(value),
+            Token::Identifier(name) => Expr::Identifier(name),
+            Token::Number(value) => Expr::Number(value),
+            _ => panic!("Expected a number, string, or identifier, got {:?}", self.peek())
+        };
 
-        let left = self.expressions.pop().unwrap();
-
+        self.advance();
         match self.peek() {
             Token::Not => {
                 self.advance(); // Consume `!`
@@ -245,17 +239,18 @@ impl Parser {
                 return result;
             },
             _ => {
-                panic!("Expected `!=`, got {:?}", self.peek());
+                // panic!("Expected condition, got {:?}", self.peek());
+                return left;
             }
         }
     }
 
     /// Parses an if statement, including else if and else.
-    ///
-    /// Does consume semicolons.
     fn parse_conditional(&mut self) -> Expr {
         self.advance(); // Consume `if`
-        let condition = self.parse_expression();
+
+        // let condition = self.parse_condition();
+        let condition = self.parse_comparison();
         let body = self.parse_block();
 
         let mut else_body = vec![];
@@ -284,8 +279,6 @@ impl Parser {
     }
 
     /// Parses an import statement.
-    ///
-    /// Does consume semicolons.
     fn parse_import(&mut self) -> Expr {
         self.advance(); // Consume `import`
         let name = match self.advance() {
@@ -306,8 +299,6 @@ impl Parser {
     }
 
     /// Parses a return statement.
-    ///
-    /// Does consume semicolons.
     fn parse_return(&mut self) -> Expr {
         self.advance(); // Consume `return`
         let value = self.parse_expression();
@@ -325,8 +316,6 @@ impl Parser {
     }
 
     /// Parses a function call.
-    ///
-    /// Does consume semicolons.
     fn parse_call(&mut self) -> Expr {
         let name = match self.advance() {
             Token::Identifier(name) => name,
@@ -384,8 +373,6 @@ impl Parser {
     }
 
     /// Parses JUST the arguments within parens.
-    ///
-    /// Does consume semicolons.
     fn parse_args(&mut self) -> Vec<Expr> {
         self.advance(); // Consume `(`
 
@@ -426,8 +413,6 @@ impl Parser {
     }
 
     /// Parses a function declaration.
-    ///
-    /// Does consume semicolons.
     fn parse_function(&mut self) -> Expr {
         self.advance(); // Consume `func`
         let name = match { self.advance() } {
@@ -450,8 +435,6 @@ impl Parser {
     }
 
     /// Parses a block of code, which is assumed to be a series of statements.
-    ///
-    /// Does consume semicolons.
     fn parse_block(&mut self) -> Vec<Expr> {
         let mut block = vec![];
         loop {
@@ -485,8 +468,6 @@ impl Parser {
     /// Parses the arguments of a function declaration.
     ///
     /// Use this to parse params during declaration, not during a call.
-    ///
-    /// Does consume semicolons.
     fn parse_params(&mut self) -> Vec<String> {
         let mut params = vec![];
         loop {
@@ -518,8 +499,6 @@ impl Parser {
     }
 
     /// Turns `Token::Identifier` into `Expr::Identifier`
-    ///
-    /// Does NOT consume semicolons, except in the case of a property access.
     ///
     /// Example:
     /// ```rs
@@ -555,6 +534,23 @@ impl Parser {
                 self.advance(); // Consume `;`
                 return Expr::Identifier(ident);
             }
+            Token::Plus | Token::Minus => {
+                self.advance();
+                match self.peek() {
+                    Token::Equal => {
+                        self.retreat();
+                        self.retreat();
+                        return self.parse_shorthand_assignment();
+                    },
+                    _ => {
+                        self.retreat();
+                    }
+                }
+            }
+            Token::Dot => {
+                self.retreat();
+                return self.parse_property_access();
+            }
             _ => {}
         }
 
@@ -564,12 +560,15 @@ impl Parser {
     }
 
     fn parse_array_access(&mut self) -> Expr {
-        let ident = match self.advance() {
+        let ident = match self.peek() {
             Token::Identifier(name) => name,
-            _ => panic!("Expected an identifier, got ?")
+            _ => panic!("Expected an identifier, got {:?}", self.peek())
         };
 
+        self.advance();
+        self.advance();
         let index = self.parse_expression();
+        self.advance();
 
         match self.peek() {
             Token::Semicolon => {
@@ -584,17 +583,40 @@ impl Parser {
     }
 
     /// Parses a declaration, which is assumed to be a `let` statement.
-    ///
-    /// Does consume semicolons.
     fn parse_declaration(&mut self) -> Expr {
-        self.advance(); // Consume `let`
-        let name = match self.advance() {
+        self.advance(); // Consume identifier
+
+        let name = match self.peek() {
             Token::Identifier(name) => name,
             _ => panic!("Expected an identifier for declaration, got {:?}", self.peek())
         };
-        self.advance(); // Consume `=`
-        
+
+        let typ = match self.peek() {
+            Token::Colon => {
+                self.advance();
+                match self.advance() {
+                    Token::Identifier(name) => {
+                        match name.as_str() {
+                            "Number" => MType::Number,
+                            "String" => MType::String,
+                            "Function" => MType::Function,
+                            "Class" => MType::Class,
+                            _ => {
+                                panic!("Unknown type: {:?}", name);
+                            }
+                        }
+                    },
+                    _ => MType::Unknown
+                }
+            }
+            _ => MType::Unknown
+        };
+
+        self.advance();
+        self.advance();
+
         let mut value = self.parse_statement();
+
         match self.peek() {
             Token::Plus => {
                 self.advance();
@@ -617,12 +639,47 @@ impl Parser {
     }
 
     fn parse_assignment(&mut self) -> Expr {
-        let assignee = self.expressions.pop().unwrap();
-        self.advance(); // Consume `=`
-        
+        self.retreat();
+        self.expressions.pop().unwrap();
+        let assignee = match self.peek() {
+            Token::Identifier(name) => Expr::Identifier(name),
+            _ => panic!("Expected an identifier for assignment, got {:?}", self.peek())
+        };
+        self.advance();
+        self.advance();
+
         let value = self.parse_expression();
 
         let result = Expr::BinOp(Operator::Assign, Box::new(assignee), Box::new(value));
+
+        match self.peek() {
+            Token::Semicolon => {
+                self.advance(); // Consume `;`
+            },
+            _ => {}
+        }
+
+        return result;
+    }
+
+    fn parse_shorthand_assignment(&mut self) -> Expr {
+        let assignee = match self.advance() {
+            Token::Identifier(name) => Expr::Identifier(name),
+            _ => panic!("Expected an identifier for assignment, got {:?}", self.peek())
+        };
+
+        let operator = match self.advance() {
+            Token::Plus => Operator::Add,
+            Token::Minus => Operator::Subtract,
+            _ => panic!("Expected a shorthand operator, got {:?}", self.peek())
+        };
+
+        self.advance(); // Consume `=`
+
+        let value = self.parse_expression();
+
+        let addition = Expr::BinOp(operator, Box::new(assignee.clone()), Box::new(value));
+        let result = Expr::BinOp(Operator::Assign, Box::new(assignee), Box::new(addition));
 
         match self.peek() {
             Token::Semicolon => {
@@ -640,8 +697,6 @@ impl Parser {
     /// 1 + 2 + 3
     /// [1, 2, 3]
     /// "Hello"
-    ///
-    /// Does consume semicolons.
     fn parse_expression(&mut self) -> Expr {
         let mut result = match self.peek() {
             Token::String(_) => {
@@ -657,8 +712,13 @@ impl Parser {
                 self.parse_array()
             },
             Token::RBracket => {
+                self.advance();
                 return Expr::Array(Box::new(vec![]));
             },
+            Token::Plus | Token::Minus => { // +=
+                self.retreat();
+                self.parse_shorthand_assignment()
+            }
             _ => panic!("Expected a number, string, or identifier, got {:?}", self.peek())
         };
 
@@ -728,8 +788,6 @@ impl Parser {
     }
 
     /// Parses a `Token::Number` into an `Expr::Number`, or a Token::Identifier into an `Expr::Identifier`.
-    ///
-    /// Does NOT consume semicolons.
     fn parse_number(&mut self) -> Expr {
         let token = self.advance();
         let result = match token {
@@ -742,8 +800,6 @@ impl Parser {
     }
 
     /// Parses a `Token::String` into an `Expr::String`.
-    ///
-    /// Does NOT consume semicolons.
     fn parse_string(&mut self) -> Expr {
         let token = self.advance();
         let result = match token {
@@ -757,10 +813,15 @@ impl Parser {
     /// Parses a property access.
     ///
     /// Assumes that the object we are accessing from is the last expression in `self.expressions`
-    fn parse_dot(&mut self) -> Expr {
-        let property = self.parse_expression();
+    fn parse_property_access(&mut self) -> Expr {
+        let object = match self.peek() {
+            Token::Identifier(name) => Expr::Identifier(name),
+            _ => panic!("Expected an identifier for property access, got {:?}", self.peek())
+        };
+        self.advance();
+        self.advance();
 
-        let object = self.expressions.pop().unwrap();
+        let property = self.parse_expression();
 
         let result = Expr::PropertyAccess(
             Box::new(object),

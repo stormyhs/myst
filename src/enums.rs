@@ -1,5 +1,14 @@
 
 #[derive(Debug, Clone)]
+pub enum MType {
+    Number,
+    String,
+    Function,
+    Class,
+    Unknown
+}
+
+#[derive(Debug, Clone)]
 pub enum Expr {
     BinOp(Operator, Box<Expr>, Box<Expr>),
 
