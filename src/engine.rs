@@ -6,7 +6,6 @@ use rainbow_wrapper::*;
 use crate::enums::*;
 
 fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<u8> {
-    println!("gen_cmp: {:?} {:?} {:?}", op, left, right);
     match op {
         Operator::Declare(ref typ) => {
             let name = match left {
@@ -23,6 +22,9 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
                 }
                 MType::Struct => {
                     Value::TYPE(vec![Type::STRUCT])
+                }
+                MType::Undefined => {
+                    Value::TYPE(vec![Type::I64])
                 }
                 _ => todo!("unhandled type: {:?}", typ)
             };
@@ -63,6 +65,10 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
                 }
             }
         }
+        Expr::String(_) => {
+            eval(vec![right.clone()], wrapper);
+            ident!("temp")
+        }
         _ => {
             eval(vec![right.clone()], wrapper);
             ident!("temp")
@@ -81,7 +87,17 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
         Operator::LesserEqual => cmp!(cond!(<=), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::NotEqual => cmp!(cond!(!=), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::Assign => mov!(right_macro.clone(), left_macro.clone()),
-        Operator::Declare(typ) => mov!(right_macro.clone(), left_macro.clone()),
+        Operator::Declare(typ) => {
+            match typ {
+                // NOTE: cope
+                MType::String | MType::Struct => {
+                    wrapper.push(pop!(ident!("temp")));
+                    wrapper.push(pop!(ident!("temp")));
+                }
+                _ => { }
+            }
+            mov!(right_macro.clone(), left_macro.clone())
+        }
     }
 }
 
@@ -189,7 +205,6 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
             }
 
             Expr::CallFunc(name, args) => {
-                println!("CallFunc: {:?}", name);
                 let name = match *name.clone() {
                     Expr::Identifier(name) => name.clone(),
                     _ => panic!("Expected identifier, got {:?}", name)
@@ -220,7 +235,17 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 }
 
                 let bytes = call!(name!(name));
-                wrapper.push(bytes)
+                wrapper.push(bytes);
+
+                // NOTE: cope
+                if name == "string.new" {
+                    let bytes = pop!(ident!("temp_struct"));
+                    wrapper.push(bytes);
+                }
+                else {
+                    let bytes = pop!(ident!("temp"));
+                    wrapper.push(bytes);
+                }
             }
 
             Expr::Number(n) => {
@@ -338,7 +363,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                         i += 1;
                         continue;
                     }
-                    Expr::CallFunc(_name, args) => {
+                    Expr::CallFunc(func_name, args) => {
                         let mut j = 0;
                         while j < args.len() {
                             match &args[j] {
@@ -362,26 +387,23 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                             j += 1;
                         }
 
-                        let prop = match *prop.clone() {
-                            Expr::Identifier(p) => p.clone(),
-                            Expr::CallFunc(name, _) => {
-                                let name = match *name {
-                                    Expr::Identifier(name) => name,
-                                    _ => panic!("Expected identifier, got {:?}", name)
-                                };
-
-                                let full_name = format!("{item}.{name}");
-                                let new_call_func = Expr::CallFunc(Box::new(Expr::Identifier(full_name)), args);
-                                println!("new_call_func: {:?}", new_call_func);
-                                eval(vec![new_call_func], wrapper);
-                                i += 1;
-                                continue;
-                            }
-                            _ => panic!("Expected identifier, got {:?}", prop)
+                        let func_name = match *func_name.clone() {
+                            Expr::Identifier(name) => name.clone(),
+                            _ => panic!("Expected identifier, got {:?}", func_name)
                         };
 
-                        let bytes = call!(name!(format!("{}.{}", item, prop)));
+                        let bytes = call!(name!(format!("{}.{}", item, func_name)));
                         wrapper.push(bytes);
+
+                        // NOTE: cope
+                        if format!("{}.{}", item, func_name) == "string.new" {
+                            let bytes = pop!(ident!("temp_struct"));
+                            wrapper.push(bytes);
+                        }
+                        else {
+                            let bytes = pop!(ident!("temp"));
+                            wrapper.push(bytes);
+                        }
 
                         i += 1;
                         continue;
