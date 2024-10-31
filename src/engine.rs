@@ -41,6 +41,28 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
     let left_macro = match left {
         Expr::Number(n) => immediate!(SIGNED(n)),
         Expr::Identifier(ref i) => ident!(i),
+        Expr::PropertyAccess(_, ref prop) => {
+            match **prop {
+                Expr::CallFunc(_, _) => {
+                    eval(vec![left.clone()], wrapper);
+                    ident!("temp_struct")
+                }
+                _ => {
+                    eval(vec![left.clone()], wrapper);
+                    ident!("temp2")
+                }
+            }
+        }
+        Expr::CallFunc(_, _) => {
+            eval(vec![left.clone()], wrapper);
+            wrapper.push(mov!(ident!("temp"), ident!("temp2".to_string())));
+            ident!("temp2")
+        }
+        Expr::String(_) => {
+            eval(vec![left.clone()], wrapper);
+            wrapper.push(mov!(ident!("temp"), ident!("temp2".to_string())));
+            ident!("temp2")
+        }
         _ => {
             eval(vec![left.clone()], wrapper);
             wrapper.push(mov!(ident!("temp"), ident!("temp2".to_string())));
@@ -50,7 +72,7 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
 
     let right_macro = match right {
         Expr::Number(n) => immediate!(SIGNED(n)),
-        Expr::Identifier(i) => ident!(i),
+        Expr::Identifier(ref i) => ident!(i),
         Expr::PropertyAccess(_, ref prop) => {
             // NOTE: This means that every time a property is a call (such as `string.new()`), it
             // will attempt to store the result in a struct. This is because I am bad at rust.
@@ -64,6 +86,10 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
                     ident!("temp")
                 }
             }
+        }
+        Expr::CallFunc(_, _) => {
+            eval(vec![right.clone()], wrapper);
+            ident!("temp")
         }
         Expr::String(_) => {
             eval(vec![right.clone()], wrapper);
@@ -81,12 +107,23 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper) -> Vec<
         Operator::Multiply => mul!(left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::Divide => div!(left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::Lesser => cmp!(cond!(<), left_macro.clone(), right_macro.clone(), ident!("temp")),
-        Operator::Greater => cmp!(cond!(>), left_macro.clone(), right_macro.clone(), ident!("temp")),
+        Operator::Greater => {
+            match right {
+                Expr::CallFunc(_, _) => {
+                    cmp!(cond!(>), left_macro.clone(), right_macro.clone(), ident!("temp"))
+                }
+                _ => {
+                    cmp!(cond!(>), left_macro.clone(), right_macro.clone(), ident!("temp"))
+                }
+            }
+        }
         Operator::Equality => cmp!(cond!(==), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::GreaterEqual => cmp!(cond!(>=), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::LesserEqual => cmp!(cond!(<=), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::NotEqual => cmp!(cond!(!=), left_macro.clone(), right_macro.clone(), ident!("temp")),
-        Operator::Assign => mov!(right_macro.clone(), left_macro.clone()),
+        Operator::Assign => {
+            mov!(right_macro.clone(), left_macro.clone())
+        },
         Operator::Declare(typ) => {
             mov!(right_macro.clone(), left_macro.clone())
         }
@@ -215,6 +252,11 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                         Expr::String(s) => {
                             eval(vec![args[i].clone()], wrapper);
                         }
+                        Expr::BinOp(_, _, _) => {
+                            eval(vec![args[i].clone()], wrapper);
+                            let bytes = push!(ident!("temp"));
+                            wrapper.push(bytes);
+                        }
                         _ => {
                             // arg is stored in `temp`
                             eval(vec![args[i].clone()], wrapper);
@@ -229,15 +271,8 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                 let bytes = call!(name!(name));
                 wrapper.push(bytes);
 
-                // NOTE: cope
-                if name == "string.new" {
-                    let bytes = pop!(ident!("temp_struct"));
-                    wrapper.push(bytes);
-                }
-                else {
-                    let bytes = pop!(ident!("temp"));
-                    wrapper.push(bytes);
-                }
+                let bytes = pop!(ident!("temp"));
+                wrapper.push(bytes);
             }
 
             Expr::Number(n) => {
@@ -355,6 +390,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                         i += 1;
                         continue;
                     }
+                    // string.>>new()<<
                     Expr::CallFunc(func_name, args) => {
                         let mut j = 0;
                         while j < args.len() {
@@ -368,6 +404,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                 Expr::String(_s) => {
                                     eval(vec![args[j].clone()], wrapper);
                                 }
+                                // string.new(>>str.text<<, str.length)
                                 Expr::PropertyAccess(obj, prop) => {
                                     let obj = match *obj.clone() {
                                         Expr::Identifier(name) => name.clone(),
@@ -379,11 +416,7 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper) {
                                             let full_name = format!("{}.{}", obj, name);
                                             wrapper.push(push!(ident!(full_name)));
                                         }
-                                        _ => {
-                                            eval(vec![args[j].clone()], wrapper);
-                                            let bytes = push!(ident!("temp"));
-                                            wrapper.push(bytes);
-                                        }
+                                        _ => todo!()
                                     }
                                 }
                                 _ => {

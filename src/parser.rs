@@ -429,8 +429,6 @@ impl Parser {
             name = "anonymous".to_string();
         }
 
-        println!("Parsing function {:?}", name);
-
         self.advance(); // Consume `(`
 
         let params = self.parse_params();
