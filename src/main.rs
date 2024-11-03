@@ -17,7 +17,6 @@ use rainbow_wrapper::var;
 
 use colored::*;
 
-
 fn get_rb_path() -> String {
     return env::var("RAINBOW_PATH").unwrap_or_else(|_| "/home/stormy/code/Rainbow/target/debug/rainbow".to_string());
 }
@@ -161,6 +160,7 @@ fn main() {
     let mut running_tests = false;
     let mut source = String::new();
     let mut output_path = String::from("out.rbb");
+    let mut user_overwrote_output_path = false;
     let mut no_run = false;
     let mut help = false;
 
@@ -180,6 +180,7 @@ fn main() {
             }
             "--output" | "-o" => {
                 output_path = args[i + 1].clone();
+                user_overwrote_output_path = true;
                 i += 1;
             },
             "--no-run" | "-n" => {
@@ -190,6 +191,11 @@ fn main() {
             },
             _ => {
                 source = arg;
+                if !user_overwrote_output_path {
+                    let mut parts: Vec<&str> = source.split(".").collect();
+                    parts.pop();
+                    output_path = format!("{}.rbb", parts.join("."));
+                }
             }
         }
 
