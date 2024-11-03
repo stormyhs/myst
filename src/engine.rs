@@ -152,7 +152,6 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper, state: &mut HashMap<String, S
                 wrapper.push(bytes);
             },
 
-            // NOTE: This is assuming declaration every time.
             Expr::Array(items) => {
                 let bytes = alloc!(
                     rbtype!(I64),
