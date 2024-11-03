@@ -3,7 +3,8 @@ use crate::enums::*;
 pub struct Parser {
     tokens: Vec<Token>,
     expressions: Vec<Expr>,
-    current: usize
+    current: usize,
+    anonymous_counter: u128
 }
 
 impl Parser {
@@ -11,7 +12,8 @@ impl Parser {
         Self {
             tokens,
             current: 0,
-            expressions: vec![]
+            expressions: vec![],
+            anonymous_counter: 0
         }
     }
 
@@ -81,6 +83,61 @@ impl Parser {
                 self.parse_function(true)
             },
             _ => todo!("Token: {:?}", self.peek())
+        }
+    }
+
+    /// Parses a type annotation.
+    fn parse_type(&mut self) -> MType {
+        self.advance(); // Consume `:`
+        match self.advance() {
+            Token::Identifier(name) => {
+                let mut result_type = MType::Undefined;
+                match name.as_str() {
+                    "Number" => {
+                        result_type = MType::Number;
+                    }
+                    "String" => {
+                        result_type = MType::String;
+                    }
+                    "Function" => {
+                        result_type = MType::Function;
+                    }
+                    "Class" => {
+                        result_type = MType::Class;
+                    }
+                    "Struct" => {
+                        result_type = MType::Struct;
+                    }
+                    "Null" => {
+                        result_type = MType::Null;
+                    }
+                    "Undefined" => {
+                        result_type = MType::Undefined;
+                    }
+                    _ => {
+                        panic!("Unknown type: {:?}", name);
+                    }
+                }
+
+                match self.peek() {
+                    Token::LArrow => { // ParentType<ChildType>
+                        self.advance();
+                        let parent = result_type;
+                        let child = self.parse_type();
+
+                        result_type = MType::Nested(
+                            Box::new(parent),
+                            Box::new(child)
+                        );
+                    }
+                    _ => {}
+                }
+
+                return result_type;
+            },
+            _ => {
+                MType::Undefined
+            }
         }
     }
 
@@ -418,6 +475,7 @@ impl Parser {
     /// Parses a function declaration.
     fn parse_function(&mut self, is_anonymous: bool) -> Expr {
         let mut name = String::new();
+        let mut typ = MType::Undefined;
         if !is_anonymous {
             self.advance(); // Consume `func`
             name = match { self.advance() } {
@@ -426,19 +484,28 @@ impl Parser {
             };
         }
         else {
-            name = "anonymous".to_string();
+            name = format!("anonymous_{}", self.anonymous_counter);
+            self.anonymous_counter += 1;
         }
 
         self.advance(); // Consume `(`
 
         let params = self.parse_params();
+        
+        match self.peek() {
+            Token::Colon => {
+                typ = self.parse_type();
+            },
+            _ => {}
+        }
 
         let body = self.parse_block();
 
         let result = Expr::DecFunc(
             name,
-            Box::new(params),
-            Box::new(body)
+            params,
+            Box::new(body),
+            typ
         );
 
         return result;
@@ -478,7 +545,7 @@ impl Parser {
     /// Parses the arguments of a function declaration.
     ///
     /// Use this to parse params during declaration, not during a call.
-    fn parse_params(&mut self) -> Vec<String> {
+    fn parse_params(&mut self) -> Vec<Expr> {
         let mut params = vec![];
         loop {
             let token = self.peek();
@@ -497,7 +564,17 @@ impl Parser {
                 },
                 Token::Identifier(param) => {
                     self.advance(); // Consume identifier
-                    params.push(param);
+
+                    let mut typ = MType::Undefined;
+                    match self.peek() {
+                        Token::Colon => {
+                            typ = self.parse_type()
+                        }
+                        _ => {}
+                    }
+
+                    let arg = Expr::Parameter(param, typ);
+                    params.push(arg);
                 },
                 _ => {
                     panic!("Unexpected token while parsing params: {:?}", token);
@@ -603,26 +680,11 @@ impl Parser {
 
         self.advance();
 
+
         let typ = match self.peek() {
             Token::Colon => {
-                self.advance();
-                match self.advance() {
-                    Token::Identifier(name) => {
-                        match name.as_str() {
-                            "Number" => MType::Number,
-                            "String" => MType::String,
-                            "Function" => MType::Function,
-                            "Class" => MType::Class,
-                            "Struct" => MType::Struct,
-                            "Unknown" => MType::Undefined,
-                            _ => {
-                                panic!("Unknown type: {:?}", name);
-                            }
-                        }
-                    },
-                    _ => MType::Undefined
-                }
-            }
+                self.parse_type()
+            },
             _ => MType::Undefined
         };
 
@@ -634,7 +696,19 @@ impl Parser {
             Token::Plus => {
                 self.advance();
                 value = Expr::BinOp(Operator::Add, Box::new(value), Box::new(self.parse_expression()));
-            },
+            }
+            Token::Minus => {
+                self.advance();
+                value = Expr::BinOp(Operator::Subtract, Box::new(value), Box::new(self.parse_expression()));
+            }
+            Token::Star => {
+                self.advance();
+                value = Expr::BinOp(Operator::Multiply, Box::new(value), Box::new(self.parse_expression()));
+            }
+            Token::Slash => {
+                self.advance();
+                value = Expr::BinOp(Operator::Divide, Box::new(value), Box::new(self.parse_expression()));
+            }
             _ => {}
         }
 

@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone)]
 pub enum MType {
     Number,
@@ -6,7 +5,26 @@ pub enum MType {
     Function,
     Class,
     Struct,
-    Null, Undefined
+    Null, Undefined,
+
+    Nested(Box<MType>, Box<MType>)
+}
+
+impl MType {
+    pub fn stringify(&self) -> String {
+        match self {
+            MType::Number => "number".to_string(),
+            MType::String => "string".to_string(),
+            MType::Function => "function".to_string(),
+            MType::Class => "class".to_string(),
+            MType::Struct => "struct".to_string(),
+            MType::Null => "null".to_string(),
+            MType::Undefined => "undefined".to_string(),
+            _ => {
+                panic!("Cannot stringify type: {:?}", self);
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -25,7 +43,8 @@ pub enum Expr {
     While(Box<Expr>, Box<Vec<Expr>>),
     For(String, Box<Expr>, Box<Vec<Expr>>),
 
-    DecFunc(String, Box<Vec<String>>, Box<Vec<Expr>>),
+    Parameter(String, MType),
+    DecFunc(String, Vec<Expr>, Box<Vec<Expr>>, MType),
     CallFunc(Box<Expr>, Box<Vec<Expr>>),
 
     DecClass(String, Box<Vec<Expr>>),

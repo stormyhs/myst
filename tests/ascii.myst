@@ -1,0 +1,7 @@
+
+let str: String = "!$";
+
+let a = str.text[0];
+let b = str.text[1];
+
+return a + b;

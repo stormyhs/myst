@@ -1,0 +1,12 @@
+
+fn go(cb: Function<Number>): Number {
+    let result = cb(34, 35);
+    return result;
+}
+
+let result = go((a: Number, b: Number): Number {
+    return a + b;
+});
+
+return result;
+

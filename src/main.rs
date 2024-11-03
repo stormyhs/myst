@@ -2,17 +2,21 @@ use std::env;
 use std::fs;
 use std::io::ErrorKind;
 use std::process::Command;
+use std::collections::HashMap;
 
 mod enums;
 mod tokenizer;
 mod parser;
 mod engine;
 
+use crate::enums::Expr;
+
 use rainbow_wrapper::wrapper::Wrapper;
 use rainbow_wrapper::types::*;
 use rainbow_wrapper::var;
 
 use colored::*;
+
 
 fn get_rb_path() -> String {
     return env::var("RAINBOW_PATH").unwrap_or_else(|_| "/home/stormy/code/Rainbow/target/debug/rainbow".to_string());
@@ -61,6 +65,9 @@ fn run_tests(debug: bool) {
         "tests/arrays.myst",
         "tests/loops.myst",
         "tests/types.myst",
+        "tests/fnargs.myst",
+        "tests/lambda.myst",
+        "tests/ascii.myst",
     ];
 
     let mut failed = 0;
@@ -104,7 +111,23 @@ fn run_tests(debug: bool) {
             Value::NAME("temp_struct".to_string())
         ));
 
-        engine::eval(ast, &mut wrapper);
+        // Poor man's function signatures. @gromton12 kindly fix this.
+        let mut state: HashMap<String, String> = HashMap::new();
+        state.insert("string.ntos".to_string(), "struct".to_string());
+        state.insert("string.new".to_string(), "struct".to_string());
+        state.insert("io.println".to_string(), "null".to_string());
+        state.insert("io.print".to_string(), "null".to_string());
+
+        let implicit_imports = vec![
+            Expr::Import("io.rbb".to_string()),
+            Expr::Import("string.rbb".to_string()),
+        ];
+
+        let mut new_ast = implicit_imports.clone();
+        new_ast.extend(ast.clone());
+        let ast = new_ast;
+
+        engine::eval(ast, &mut wrapper, &mut state);
 
         let output_path = "output.rbb";
         fs::write(output_path, wrapper.emit()).expect("Could not write bytecode to file");
@@ -242,18 +265,33 @@ fn main() {
         Value::NAME("temp_struct".to_string())
     ));
 
-    engine::eval(ast.clone(), &mut wrapper);
+    let mut state: HashMap<String, String> = HashMap::new();
+    // Poor man's function signatures. @gromton12 kindly fix this.
+    state.insert("string.ntos".to_string(), "struct".to_string());
+    state.insert("string.new".to_string(), "struct".to_string());
+    state.insert("io.println".to_string(), "null".to_string());
+    state.insert("io.print".to_string(), "null".to_string());
 
-    if debug_mode {
-        println!("\n\nMyst source code translated to Rainbow bytes:\n{:?}\n\n", wrapper.bytes);
-    }
+    let implicit_imports = vec![
+        Expr::Import("io.rbb".to_string()),
+        Expr::Import("string.rbb".to_string()),
+    ];
 
+    let mut new_ast = implicit_imports.clone();
+    new_ast.extend(ast.clone());
+    let ast = new_ast;
+
+    engine::eval(ast.clone(), &mut wrapper, &mut state);
     fs::write(output_path.clone(), wrapper.emit()).expect("Could not write bytecode to file");
 
-    println!("✔  Compiled to {}", output_path.green());
+    if debug_mode {
+        println!("✔  Compiled to {}", output_path.green());
+    }
 
     if !no_run {
         let ret = run_with_rb(output_path, debug_mode);
-        println!("✔️ Rainbow exited with code {}", ret);
+        if debug_mode {
+            println!("✔️ Rainbow exited with code {}", ret);
+        }
     }
 }
