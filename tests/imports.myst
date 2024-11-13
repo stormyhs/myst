@@ -1,5 +1,5 @@
 import "/home/stormy/code/myst/lib/import_me.rbb";
 
-let add_res = add(34, 35);
+let add_res: Number = add(34, 35);
 
 return add_res;

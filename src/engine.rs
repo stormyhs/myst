@@ -7,6 +7,58 @@ use std::collections::HashMap;
 
 use crate::enums::*;
 
+fn infer_type(expr: &Expr, state: &HashMap<String, String>) -> Type {
+    match expr {
+        Expr::Number(_) => Type::I64,
+        Expr::String(_) => Type::STRUCT,
+        Expr::Identifier(name) => {
+            match state.get(name) {
+                Some(t) => {
+                    match t.as_str() {
+                        "number" => Type::I64,
+                        "string" => Type::STRUCT,
+                        "struct" => Type::STRUCT,
+                        "callback" => Type::NAME,
+                        "null" => Type::VOID,
+                        _ => Type::I64
+                    }
+                }
+                None => {
+                    panic!("Could not infer type of identifier: {}", name);
+                }
+            }
+        }
+        Expr::CallFunc(name, _) => {
+            match *name.clone() {
+                Expr::Identifier(name) => {
+                    match state.get(&name) {
+                        Some(t) => {
+                            match t.as_str() {
+                                "number" => Type::I64,
+                                "string" => Type::STRUCT,
+                                "struct" => Type::STRUCT,
+                                "callback" => Type::NAME,
+                                "null" => Type::VOID,
+                                _ => Type::I64
+                            }
+                        }
+                        None => {
+                            panic!("Could not infer type of function: {}", name);
+                        }
+                    }
+                }
+                _ => {
+                    panic!("Expected identifier, got {:?}", name);
+                }
+            }
+        }
+        Expr::Array(_) => Type::I64,
+        _ => {
+            panic!("Could not infer type of expression: {:?}", expr);
+        }
+    }
+}
+
 fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper, state: &mut HashMap<String, String>) -> Vec<u8> {
     match op {
         Operator::Declare(ref typ) => {
@@ -23,7 +75,8 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper, state: 
                     Value::TYPE(vec![Type::STRUCT])
                 }
                 MType::Undefined => {
-                    Value::TYPE(vec![Type::I64])
+                    let typ = infer_type(&right, state);
+                    Value::TYPE(vec![typ])
                 }
                 _ => todo!("unhandled type: {:?}", typ)
             };
