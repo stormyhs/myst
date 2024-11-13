@@ -19,11 +19,6 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper, state: 
                 MType::Number => {
                     Value::TYPE(vec![Type::I64])
                 }
-                /*
-                MType::String => {
-                    Value::TYPE(vec![Type::POINTER, Type::U8])
-                }
-                */
                 MType::Struct | MType::String => {
                     Value::TYPE(vec![Type::STRUCT])
                 }
@@ -84,7 +79,41 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper, state: 
             match **prop {
                 Expr::CallFunc(ref name, _) => {
                     eval(vec![right.clone()], wrapper, state);
-                    ident!("temp_struct")
+                    let name = match *name.clone() {
+                        Expr::Identifier(name) => name.clone(),
+                        _ => panic!("Expected identifier, got {:?}", name)
+                    };
+                    let obj_name = match *obj.clone() {
+                        Expr::Identifier(name) => name.clone(),
+                        _ => panic!("Expected identifier, got {:?}", obj)
+                    };
+                    let full_name = format!("{}.{}", obj_name, name);
+
+                    let typ = match state.get(&full_name) {
+                        Some(t) => t,
+                        None => &MType::Undefined.stringify()
+                    };
+                    let bytes = match typ.as_str() {
+                        "number" => {
+                            ident!("temp")
+                        }
+                        "string" => {
+                            ident!("temp_struct")
+                        }
+                        "struct" => {
+                            ident!("temp_struct")
+                        }
+                        "callback" => {
+                            panic!()
+                        }
+                        "null" => {
+                            panic!()
+                        }
+                        _ => {
+                            ident!("temp")
+                        }
+                    };
+                    bytes
                 }
                 _ => {
                     eval(vec![right.clone()], wrapper, state);

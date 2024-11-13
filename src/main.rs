@@ -27,7 +27,7 @@ fn run_with_rb(path: String, debug: bool) -> i32 {
     output.arg(format!("{}/{}", current_dir, path));
 
     output.arg("-l");
-    output.arg("/home/stormy/code/Rainbow/std");
+    output.arg("/home/stormy/code/Rainbow/core");
 
     if debug {
         output.arg("--debug");
@@ -116,10 +116,16 @@ fn run_tests(debug: bool) {
         state.insert("string.new".to_string(), "struct".to_string());
         state.insert("io.println".to_string(), "null".to_string());
         state.insert("io.print".to_string(), "null".to_string());
+        state.insert("fs.open".to_string(), "number".to_string());
+        state.insert("fs.read".to_string(), "number".to_string());
+        state.insert("fs.write".to_string(), "number".to_string());
+        state.insert("fs.seek".to_string(), "number".to_string());
+        state.insert("fs.close".to_string(), "number".to_string());
 
         let implicit_imports = vec![
             Expr::Import("io.rbb".to_string()),
             Expr::Import("string.rbb".to_string()),
+            Expr::Import("fs.rbb".to_string()),
         ];
 
         let mut new_ast = implicit_imports.clone();
@@ -277,10 +283,16 @@ fn main() {
     state.insert("string.new".to_string(), "struct".to_string());
     state.insert("io.println".to_string(), "null".to_string());
     state.insert("io.print".to_string(), "null".to_string());
+    state.insert("fs.open".to_string(), "number".to_string());
+    state.insert("fs.read".to_string(), "number".to_string());
+    state.insert("fs.write".to_string(), "number".to_string());
+    state.insert("fs.seek".to_string(), "number".to_string());
+    state.insert("fs.close".to_string(), "number".to_string());
 
     let implicit_imports = vec![
         Expr::Import("io.rbb".to_string()),
         Expr::Import("string.rbb".to_string()),
+        Expr::Import("fs.rbb".to_string()),
     ];
 
     let mut new_ast = implicit_imports.clone();
