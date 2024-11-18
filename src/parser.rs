@@ -4,6 +4,7 @@ pub struct Parser {
     tokens: Vec<Token>,
     expressions: Vec<Expr>,
     current: usize,
+    line: usize,
     anonymous_counter: u128
 }
 
@@ -12,6 +13,7 @@ impl Parser {
         Self {
             tokens,
             current: 0,
+            line: 0,
             expressions: vec![],
             anonymous_counter: 0
         }
@@ -33,6 +35,14 @@ impl Parser {
     fn parse_statement(&mut self) -> Expr {
         let token = self.peek();
         match token {
+            Token::EOF => {
+                Expr::EOF
+            }
+            Token::NewLine => {
+                self.line += 1;
+                self.advance(); // Consume `NewLine`
+                self.parse_statement()
+            },
             Token::Plus | Token::Minus | Token::Star | Token::Slash | Token::RParen | Token::LBracket | Token::Comma | Token::Semicolon => {
                 self.parse_expression()
             },
@@ -522,6 +532,9 @@ impl Parser {
                 },
                 Token::RCurly => {
                     self.advance(); // Consume `}`
+                    break;
+                },
+                Token::EOF => {
                     break;
                 },
                 _ => {

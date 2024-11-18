@@ -1,0 +1,7 @@
+
+let fd: Number = fs.open("./tests/number.txt", fs.READ_WRITE);
+
+let content: String = fs.readString(fd);
+let number: Number = string.ston(content);
+
+return number + 35;

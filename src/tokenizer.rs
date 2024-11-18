@@ -300,7 +300,45 @@ pub fn tokenize(source: String) -> Vec<Token> {
                 }
             }
         }
+
+        // tokens.push(Token::NewLine);
     }
+
+    // Format strings (newlines, tabs, etc.)
+    let mut new_tokens: Vec<Token> = Vec::new();
+    let mut in_string = false;
+    let mut in_escape = false;
+    for token in tokens.clone() {
+        match token {
+            Token::String(s) => {
+                let mut new_string = String::new();
+                for c in s.chars() {
+                    if in_escape {
+                        match c {
+                            'n' => new_string.push('\n'),
+                            't' => new_string.push('\t'),
+                            _ => new_string.push(c)
+                        }
+
+                        in_escape = false;
+                    }
+                    else {
+                        match c {
+                            '\\' => in_escape = true,
+                            _ => new_string.push(c)
+                        }
+                    }
+                }
+
+                new_tokens.push(Token::String(new_string));
+            },
+            _ => {
+                new_tokens.push(token);
+            }
+        }
+    }
+
+    tokens = new_tokens;
 
     // Remove multiline comments
     let mut new_tokens: Vec<Token> = Vec::new();

@@ -67,6 +67,7 @@ fn run_tests(debug: bool) {
         "tests/fnargs.myst",
         "tests/lambda.myst",
         "tests/ascii.myst",
+        "tests/files.myst",
     ];
 
     let mut failed = 0;
@@ -106,21 +107,21 @@ fn run_tests(debug: bool) {
             Value::NAME("temp3".to_string())
         ));
         wrapper.push(var!(
-            Value::TYPE(vec![Type::STRUCT]),
+            Value::TYPE(vec![Type::STRUCT("_".to_string())]),
             Value::NAME("temp_struct".to_string())
         ));
 
         // Poor man's function signatures. @gromton12 kindly fix this.
         let mut state: HashMap<String, String> = HashMap::new();
         state.insert("string.ntos".to_string(), "struct".to_string());
+        state.insert("string.ston".to_string(), "number".to_string());
         state.insert("string.new".to_string(), "struct".to_string());
         state.insert("io.println".to_string(), "null".to_string());
         state.insert("io.print".to_string(), "null".to_string());
+        state.insert("fs.clear".to_string(), "null".to_string());
+        state.insert("fs.readString".to_string(), "struct".to_string());
+        state.insert("fs.close".to_string(), "null".to_string());
         state.insert("fs.open".to_string(), "number".to_string());
-        state.insert("fs.read".to_string(), "number".to_string());
-        state.insert("fs.write".to_string(), "number".to_string());
-        state.insert("fs.seek".to_string(), "number".to_string());
-        state.insert("fs.close".to_string(), "number".to_string());
 
         let implicit_imports = vec![
             Expr::Import("io.rbb".to_string()),
@@ -273,21 +274,21 @@ fn main() {
         Value::NAME("temp3".to_string())
     ));
     wrapper.push(var!(
-        Value::TYPE(vec![Type::STRUCT]),
+        Value::TYPE(vec![Type::STRUCT("_".to_string())]),
         Value::NAME("temp_struct".to_string())
     ));
 
     let mut state: HashMap<String, String> = HashMap::new();
     // Poor man's function signatures. @gromton12 kindly fix this.
     state.insert("string.ntos".to_string(), "struct".to_string());
+    state.insert("string.ston".to_string(), "number".to_string());
     state.insert("string.new".to_string(), "struct".to_string());
     state.insert("io.println".to_string(), "null".to_string());
     state.insert("io.print".to_string(), "null".to_string());
+    state.insert("fs.clear".to_string(), "null".to_string());
+    state.insert("fs.readString".to_string(), "struct".to_string());
+    state.insert("fs.close".to_string(), "null".to_string());
     state.insert("fs.open".to_string(), "number".to_string());
-    state.insert("fs.read".to_string(), "number".to_string());
-    state.insert("fs.write".to_string(), "number".to_string());
-    state.insert("fs.seek".to_string(), "number".to_string());
-    state.insert("fs.close".to_string(), "number".to_string());
 
     let implicit_imports = vec![
         Expr::Import("io.rbb".to_string()),

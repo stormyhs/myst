@@ -7,17 +7,26 @@ use std::collections::HashMap;
 
 use crate::enums::*;
 
+fn create_rainbow_string(s: String, wrapper: &mut Wrapper) {
+    wrapper.push_string(&s);
+    wrapper.push(push!(ident!(Wrapper::get_string_name(&s))));
+    wrapper.push(push!(immediate!(UNSIGNED(s.len()))));
+
+    let bytes = call!(name!("string.new"));
+    wrapper.push(bytes);
+}
+
 fn infer_type(expr: &Expr, state: &HashMap<String, String>) -> Type {
     match expr {
         Expr::Number(_) => Type::I64,
-        Expr::String(_) => Type::STRUCT,
+        Expr::String(_) => Type::STRUCT("_".to_string()),
         Expr::Identifier(name) => {
             match state.get(name) {
                 Some(t) => {
                     match t.as_str() {
                         "number" => Type::I64,
-                        "string" => Type::STRUCT,
-                        "struct" => Type::STRUCT,
+                        "string" => Type::STRUCT("_".to_string()),
+                        "struct" => Type::STRUCT("_".to_string()),
                         "callback" => Type::NAME,
                         "null" => Type::VOID,
                         _ => Type::I64
@@ -35,8 +44,19 @@ fn infer_type(expr: &Expr, state: &HashMap<String, String>) -> Type {
                         Some(t) => {
                             match t.as_str() {
                                 "number" => Type::I64,
-                                "string" => Type::STRUCT,
-                                "struct" => Type::STRUCT,
+                                "i64" => Type::I64,
+                                "i32" => Type::I32,
+                                "i16" => Type::I16,
+                                "i8" => Type::I8,
+                                "u64" => Type::U64,
+                                "u32" => Type::U32,
+                                "u16" => Type::U16,
+                                "u8" => Type::U8,
+                                "f64" => Type::F64,
+                                "f32" => Type::F32,
+                                "f16" => Type::F16,
+                                "string" => Type::STRUCT("_".to_string()),
+                                "struct" => Type::STRUCT("_".to_string()),
                                 "callback" => Type::NAME,
                                 "null" => Type::VOID,
                                 _ => Type::I64
@@ -71,8 +91,51 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper, state: 
                 MType::Number => {
                     Value::TYPE(vec![Type::I64])
                 }
+
+                MType::I64 => {
+                    Value::TYPE(vec![Type::I64])
+                }
+                MType::I32 => {
+                    Value::TYPE(vec![Type::I32])
+                }
+                MType::I16 => {
+                    Value::TYPE(vec![Type::I16])
+                }
+                MType::I8 => {
+                    Value::TYPE(vec![Type::I8])
+                }
+
+                MType::U64 => {
+                    Value::TYPE(vec![Type::U64])
+                }
+                MType::U32 => {
+                    Value::TYPE(vec![Type::U32])
+                }
+                MType::U16 => {
+                    Value::TYPE(vec![Type::U16])
+                }
+                MType::U8 => {
+                    Value::TYPE(vec![Type::U8])
+                }
+
+                MType::F64 => {
+                    Value::TYPE(vec![Type::F64])
+                }
+                MType::F32 => {
+                    Value::TYPE(vec![Type::F32])
+                }
+                MType::F16 => {
+                    Value::TYPE(vec![Type::F16])
+                }
+
+                MType::U64 => {
+                    Value::TYPE(vec![Type::U64])
+                }
                 MType::Struct | MType::String => {
-                    Value::TYPE(vec![Type::STRUCT])
+                    Value::TYPE(vec![Type::STRUCT("_".to_string())])
+                }
+                MType::Null => {
+                    Value::TYPE(vec![Type::VOID])
                 }
                 MType::Undefined => {
                     let typ = infer_type(&right, state);
@@ -85,7 +148,6 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper, state: 
                 typ.clone(),
                 Value::NAME(name.clone().to_string())
             ));
-
         }
         _ => {}
     }
@@ -163,6 +225,7 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper, state: 
                             panic!()
                         }
                         _ => {
+                            println!("[Engine] WARN! Assuming I64 on function return type.");
                             ident!("temp")
                         }
                     };
@@ -179,15 +242,8 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper, state: 
             ident!("temp")
         }
         Expr::String(ref s) => {
-            let new_expr = Expr::CallFunc(
-                Box::new(
-                    Expr::Identifier(
-                        "string.new".to_string()
-                    )
-                ),
-                Box::new(vec![Expr::String(s.to_string())])
-            );
-            eval(vec![new_expr], wrapper, state);
+            create_rainbow_string(s.to_string(), wrapper);
+            wrapper.push(pop!(ident!("temp_struct")));
             ident!("temp_struct")
         }
         _ => {
@@ -202,26 +258,13 @@ fn gen_cmp(op: Operator, left: Expr, right: Expr, wrapper: &mut Wrapper, state: 
         Operator::Multiply => mul!(left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::Divide => div!(left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::Lesser => cmp!(cond!(<), left_macro.clone(), right_macro.clone(), ident!("temp")),
-        Operator::Greater => {
-            match right {
-                Expr::CallFunc(_, _) => {
-                    cmp!(cond!(>), left_macro.clone(), right_macro.clone(), ident!("temp"))
-                }
-                _ => {
-                    cmp!(cond!(>), left_macro.clone(), right_macro.clone(), ident!("temp"))
-                }
-            }
-        }
+        Operator::Greater => cmp!(cond!(>), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::Equality => cmp!(cond!(==), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::GreaterEqual => cmp!(cond!(>=), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::LesserEqual => cmp!(cond!(<=), left_macro.clone(), right_macro.clone(), ident!("temp")),
         Operator::NotEqual => cmp!(cond!(!=), left_macro.clone(), right_macro.clone(), ident!("temp")),
-        Operator::Assign => {
-            mov!(right_macro.clone(), left_macro.clone())
-        },
-        Operator::Declare(typ) => {
-            mov!(right_macro.clone(), left_macro.clone())
-        }
+        Operator::Assign => mov!(right_macro.clone(), left_macro.clone()),
+        Operator::Declare(typ) => mov!(right_macro.clone(), left_macro.clone())
     }
 }
 
@@ -305,8 +348,8 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper, state: &mut HashMap<String, S
                         Expr::Parameter(name, typ) => {
                             let t = match typ {
                                 MType::Number => Type::I64,
-                                MType::String => Type::STRUCT,
-                                MType::Struct => Type::STRUCT,
+                                MType::String => Type::STRUCT("_".to_string()),
+                                MType::Struct => Type::STRUCT("_".to_string()),
                                 MType::Function => {
                                     state.insert(name.clone(), "callback".to_string());
                                     Type::NAME
@@ -314,8 +357,8 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper, state: &mut HashMap<String, S
                                 MType::Nested(parent, child) => {
                                     let parent = match *parent.clone() {
                                         MType::Number => Type::I64,
-                                        MType::String => Type::STRUCT,
-                                        MType::Struct => Type::STRUCT,
+                                        MType::String => Type::STRUCT("_".to_string()),
+                                        MType::Struct => Type::STRUCT("_".to_string()),
                                         MType::Function => {
                                             state.insert(name.clone(), "callback".to_string());
                                             Type::NAME
@@ -330,11 +373,11 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper, state: &mut HashMap<String, S
                                         }
                                         MType::String => {
                                             state.insert(name.clone(), "callback-string".to_string());
-                                            Type::STRUCT
+                                            Type::STRUCT("_".to_string())
                                         },
                                         MType::Struct => {
                                             state.insert(name.clone(), "callback-struct".to_string());
-                                            Type::STRUCT
+                                            Type::STRUCT("_".to_string())
                                         },
                                         MType::Function => {
                                             state.insert(name.clone(), "callback-callback".to_string());
@@ -398,23 +441,30 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper, state: &mut HashMap<String, S
                             wrapper.push(push!(immediate!(SIGNED(*n))));
                         }
                         Expr::Identifier(name) => {
-                            wrapper.push(
-                                push!(
-                                    immediate!(
-                                        NAME(name.clone())
-                                    )
-                                )
-                            );
+                            // Explanation for later me:
+                            // If the `name` exists in our cope-state, it is a function.
+                            // If it does not exist, it is a variable.
+                            // Probably.
+                            // TODO: Rework how the engine stores state.
+                            match state.get(name) {
+                                Some(_t) => {
+                                    wrapper.push(push!(immediate!(NAME(name.clone()))));
+                                }
+                                None => {
+                                    wrapper.push(push!(ident!(name.clone())));
+                                }
+                            };
                         }
-                        Expr::String(_s) => {
-                            eval(vec![args[i].clone()], wrapper, state);
+                        Expr::String(s) => {
+                            create_rainbow_string(s.to_string(), wrapper);
+                            wrapper.push(pop!(ident!("temp_struct")));
                         }
                         Expr::BinOp(_, _, _) => {
                             eval(vec![args[i].clone()], wrapper, state);
                             let bytes = push!(ident!("temp"));
                             wrapper.push(bytes);
                         }
-                        Expr::DecFunc(name, _, _, typ) => {
+                        Expr::DecFunc(name, _, _, _typ) => {
                             eval(vec![args[i].clone()], wrapper, state);
                             let bytes = push!(name!(name.clone()));
                             wrapper.push(bytes);
@@ -618,7 +668,17 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper, state: &mut HashMap<String, S
                                     }
                                 }
                                 Expr::String(s) => {
-                                    eval(vec![args[j].clone()], wrapper, state);
+                                    match full_name.as_str() {
+                                        "io.println" | "io.print" => {
+                                            create_rainbow_string(s.to_string(), wrapper);
+                                            wrapper.push(pop!(ident!("temp_struct")));
+                                            wrapper.push(push!(ident!("temp_struct.text")));
+                                            wrapper.push(push!(ident!("temp_struct.length")));
+                                        }
+                                        _ => {
+                                            create_rainbow_string(s.to_string(), wrapper);
+                                        }
+                                    }
                                 }
                                 Expr::PropertyAccess(obj, prop) => {
                                     let obj = match *obj.clone() {
@@ -665,28 +725,23 @@ pub fn eval(ast: Vec<Expr>, wrapper: &mut Wrapper, state: &mut HashMap<String, S
                             Some(t) => t,
                             None => &MType::Undefined.stringify()
                         };
-                        let bytes = match typ.as_str() {
+                        match typ.as_str() {
                             "number" => {
-                                pop!(ident!("temp"))
+                                wrapper.push(pop!(ident!("temp")))
                             }
                             "string" => {
-                                pop!(ident!("temp_struct"))
+                                wrapper.push(pop!(ident!("temp_struct")))
                             }
                             "struct" => {
-                                pop!(ident!("temp_struct"))
+                                wrapper.push(pop!(ident!("temp_struct")))
                             }
-                            "callback" => {
-                                nop!()
-                            }
-                            "null" => {
-                                nop!()
+                            "callback" | "null" | "undefined" => {
                             }
                             _ => {
                                 // Assume number on function return types
-                                pop!(ident!("temp"))
+                                wrapper.push(pop!(ident!("temp")))
                             }
                         };
-                        wrapper.push(bytes);
 
                     }
                     Expr::ArrayAccess(name, index) => {

@@ -1,6 +1,10 @@
 #[derive(Debug, Clone)]
 pub enum MType {
-    Number,
+    Number, // i64
+    I64, I32, I16, I8,
+    U64, U32, U16, U8,
+    F64, F32, F16,
+
     String,
     Function,
     Class,
@@ -54,7 +58,8 @@ pub enum Expr {
     Include(String),
 
     Return(Box<Expr>),
-    Pass
+    Pass,
+    EOF,
 }
 
 #[derive(Debug, Clone)]
@@ -94,6 +99,7 @@ pub enum Token {
     Return,
 
     Pass,
+    NewLine,
 
     EOF
 }
